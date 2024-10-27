@@ -6,13 +6,14 @@ import { getStorage } from 'firebase/storage';
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDSsmK57c_LBlFMTEuT88Ilrcu6PAjGvD4",
-  authDomain: "renting-wala.firebaseapp.com",
-  projectId: "renting-wala",
-  storageBucket: "renting-wala.appspot.com",
-  messagingSenderId: "180970125349",
-  appId: "1:180970125349:web:a204e0c73d0b39a521a7cc",
-  measurementId: "G-BLSYY0G1BM"
+  apiKey: "AIzaSyB83cFIm8LxMuPtHIHGY9jZl4YvAs1UX18",
+  authDomain: "renting-wala-27d06.firebaseapp.com",
+  projectId: "renting-wala-27d06",
+  storageBucket: "renting-wala-27d06.appspot.com",
+  messagingSenderId: "914352196749",
+  appId: "1:914352196749:web:e85203ae04179e31f866c4",
+  measurementId: "G-6LM56R8KKQ"
+  
 };
 
 // Initialize Firebase
