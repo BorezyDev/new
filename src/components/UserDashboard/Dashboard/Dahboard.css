@@ -1,0 +1,120 @@
+.dashboard-container {
+  display: flex;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+  margin-top: 20px;
+  width: 100%;
+  transition: margin-left 0.3s ;
+}
+
+.sidebar-open .reports-container {
+  margin-left: 250px; /* Adjust this value according to the width of the sidebar */
+  width: calc(100% - 250px); /* Adjust the width of the content when sidebar is open */
+}
+
+.reports-container {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+  width: 100%;
+}
+
+/* Sales report and overview styling */
+.sales-report, .sales-overview {
+  margin-bottom: 20px;
+  background-color: #F3EFFC;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-size: 16px;
+}
+
+/* Table container styling */
+.tables-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table1, .table2, .table3 {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #F3EFFC;
+}
+
+td {
+  background-color: #ffffff;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+  .report-cards {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .card {
+    font-size: 14px;
+    padding: 15px;
+  }
+
+  th, td {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .sidebar-open .reports-container {
+    margin-left: 200px; /* Adjust for smaller screen sizes */
+    width: calc(100% - 200px);
+  }
+}
+
+@media (max-width: 480px) {
+  .report-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    width: 100%;
+    margin: 10px 0;
+    font-size: 12px;
+    padding: 10px;
+  }
+
+  th, td {
+    padding: 5px;
+    font-size: 12px;
+  }
+}
