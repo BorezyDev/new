@@ -188,11 +188,12 @@ const ClientLeadsDashboard = () => {
                     <td>{lead.leadName}</td>
                     <td>{lead.mobileNo}</td>
                     <td>{lead.email}</td>
-                    <td>{lead.eventDate.toLocaleString()}</td>
+                    <td>{lead.eventDate ? lead.eventDate.toLocaleString() : 'N/A'}</td>
+
                     <td>{lead.requirement}</td>
                     <td>{lead.source}</td>
                     <td>{lead.stage}</td>
-                    <td>{lead.followupDate.toLocaleString()}</td>
+                    <td>{lead.followupDate ? lead.followupDate.toLocaleString() : 'N/A'}</td>
                     <td>
                     <div className="action-buttons">
                       <label onClick={() => handlecopy(lead)}><FaCopy style={{ color: '#757575', cursor: 'pointer' }} /> </label> {/* Pass the product object */}
