@@ -50,6 +50,8 @@ const BookingDashboard = () => {
         const productsSnapshot = await getDocs(q);
 
         let allBookings = [];
+        
+
 
         for (const productDoc of productsSnapshot.docs) {
           const productCode = productDoc.data().productCode;
@@ -69,8 +71,12 @@ const BookingDashboard = () => {
               createdAt,
             } = bookingData;
 
-            const pickupDateStr = pickupDate.toDate().toDateString();
-            const returnDateStr = returnDate.toDate().toDateString();
+            const pickupDateStr = (pickupDate && typeof pickupDate.toDate === 'function') 
+            ? pickupDate.toDate().toDateString() 
+            : new Date(pickupDate).toDateString();
+          const returnDateStr = (returnDate && typeof returnDate.toDate === 'function') 
+            ? returnDate.toDate().toDateString() 
+            : new Date(returnDate).toDateString();
             
             // Check if pickupDate matches today's date and if stage needs to be updated
             if (pickupDateStr === todayDateStr && userDetails.stage ==='Booking') {
@@ -86,14 +92,23 @@ const BookingDashboard = () => {
               userDetails.stage = 'returnPending'; // Update locally for immediate display
             }
 
+            if (userDetails.stage === 'return') {
+              const today = new Date();
+              await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                returnDate: today, // Update return date to today
+              });
+              bookingData.returnDate = today; // Update locally for immediate display
+            }
+            
+
             allBookings.push({
               bookingId,
               receiptNumber,
               username: userDetails.name,
               contactNo: userDetails.contact,
               email: userDetails.email,
-              pickupDate: pickupDate.toDate(),
-              returnDate: returnDate.toDate(),
+              pickupDate: pickupDate ? (pickupDate.toDate ? pickupDate.toDate() : new Date(pickupDate)) : null,
+              returnDate: returnDate ? (returnDate.toDate ? returnDate.toDate() : new Date(returnDate)) : null,
               createdAt: createdAt || null,
               stage: userDetails.stage,
               products: [{ productCode, quantity: parseInt(quantity, 10) }],
@@ -368,7 +383,7 @@ const BookingDashboard = () => {
               onChange={(e) => setSearchField(e.target.value)}
               className="search-dropdown7"
             >
-                
+             
                 <option value="receiptNumber">Receipt Number</option>
                 <option value ="bookingcreation">Booking Creation</option>
                 <option value="username">Clients Name</option>

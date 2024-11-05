@@ -4,14 +4,13 @@ import { db } from '../../firebaseConfig';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Papa from 'papaparse';
 import './Leads.css';
-import editIcon from '../../assets/Edit.png';
-import deleteIcon from '../../assets/Trash Can - Copy.png';
+
 import Header from './Header';
 import Sidebar from './Sidebar';
 import RightSidebar from './RightSidebar';
 import search from '../../assets/Search.png';
-import downloadIcon from '../../assets/Download.png';
-import uploadIcon from '../../assets/Upload.png';
+
+import { FaPlus, FaUpload , FaDownload, FaEdit, FaCopy} from 'react-icons/fa';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -158,22 +157,43 @@ const Leads = () => {
     }
   };
 
+  const handlecopy = (leads) => {
+    // Destructure product details from the product object
+    const {  businessName, contactNumber, emailId, location, source, status, nextFollowup } = leads;
+      // Format the text for copying
+      const formattedText = `
+      Business Name: ${businessName || '-'}
+      Mobile No: ${contactNumber || '-'}
+      Email: ${emailId || '-'}
+      Location: ${location || '-'}
+      Source: ${source || '-'}
+      Status: ${status || '-'}
+      Follow up Date: ${nextFollowup || '-'}
+      
+    `;
+  
+    // Copy to clipboard
+    navigator.clipboard.writeText(formattedText.trim());
+  
+    // Display a confirmation alert
+    alert("Lead details copied to clipboard:\n" );
+  };
   return (
     <div className={`dashboard-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       <div className="dashboard-content">
         <Header onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>
+        <h2 style={{ marginLeft: '10px', marginTop: '80px' }}>
           {filterTitleMap[location.pathname.split('/').pop()] || 'Total Leads'} ({filteredLeads.length})
         </h2>
         <div className="toolbar-container">
-          <div className="search-bar-container">
-            <img src={search} alt="search icon" className="search-icon" />
+          <div className="search-bar-container7">
+            <img src={search} alt="search icon" className="search-icon7" />
             <select
             
               value={searchField}
               onChange={(e) => setSearchField(e.target.value)}
-              className="search-dropdown"
+              className="search-dropdown7"
             >
               
               <option value="businessName">Business Name</option>
@@ -193,12 +213,13 @@ const Leads = () => {
             />
           </div>
           <div className="action-buttons">
-            <button onClick={exportToCSV} className="action-button">
-              <img src={downloadIcon} alt="Export" className="icon" />
+          <label className="export-button" onClick={exportToCSV}>
+          <FaDownload />
               Export
-            </button>
-            <label htmlFor="import" className="action-button">
-              <img src={uploadIcon} alt="Import" className="icon" />
+              
+            </label>
+            <label htmlFor="import" className="import-button">
+            <FaUpload />
               Import
               <input
                 type="file"
@@ -207,18 +228,19 @@ const Leads = () => {
                 onChange={handleImport}
                 style={{ display: 'none' }}
               />
+            </label>  
+            <label className="add-product-button" onClick={() => navigate('/create-lead')}>
+          <FaPlus />
+              Add lead
             </label>
-            <div className="create-branch-container">
-              <button onClick={() => navigate('/create-lead')}>Add Lead</button>
             </div>
-          </div>
         </div>
 
         <div className="table-container">
-          <table className="table">
+          <table className="table1">
             <thead>
               <tr>
-                <th>Serial No.</th>
+                <th>Sr. No.</th>
                 <th>Business Name</th>
                 <th>Business Type</th>
                 <th>Contact Number</th>
@@ -245,18 +267,10 @@ const Leads = () => {
                   <td>{lead.status}</td>
                   <td>{formatDate(lead.nextFollowup)}</td>
                   <td>
-                    <img
-                      src={editIcon}
-                      alt="Edit"
-                      className="action-icon"
-                      onClick={() => handleEdit(lead.id)}
-                    />
-                    {/* <img
-                      src={deleteIcon}
-                      alt="Delete"
-                      className="action-icon"
-                      onClick={() => handleDelete(lead.id)}
-                    /> */}
+                  <div className="action-buttons">
+                  <label onClick={() => handleEdit(lead.id)}><FaEdit style={{ color: '#757575', cursor: 'pointer' }}/></label>
+                  <label onClick={() => handlecopy(lead)}><FaCopy style={{ color: '#757575', cursor: 'pointer' }} /> </label>  
+                  </div>
                   </td>
                 </tr>
               ))}

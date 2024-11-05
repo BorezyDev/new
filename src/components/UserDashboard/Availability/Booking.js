@@ -901,6 +901,7 @@ useEffect(() => {
       {isAvailabilityFormVisible  && (
      
      <div>
+      
       <h8>Check Product Availability </h8>
       {products.map((product, index) => (
         <div key={index} className="product-check" style={{ marginBottom: '20px',  padding: '10px', border: '1px solid #ddd',background:'#ffffff',}}>
@@ -1097,7 +1098,7 @@ useEffect(() => {
          </select>
        </div>
         <div className="form-group1">
-           <label>Identity Number</label>
+           <label>Identity Proof Number</label>
            <input
              type="text"
              value={userDetails.identitynumber}
@@ -1245,10 +1246,10 @@ useEffect(() => {
                 </div>
               ))}
               <div className="receipt-row">
-                <div className="receipt-column">
+                <div className="receipt-row">
                   <strong>Alterations:</strong>
                 </div>
-                <div className="receipt-column">
+                <div className="receipt-column1">
                       <input
                       type="text"
                       value={userDetails.alterations}
@@ -1367,7 +1368,7 @@ useEffect(() => {
                       
                     >
                       <option value="fullpayment" >Full Payment</option>
-                      <option value="depositepending">Deposite Pending</option>
+                      <option value="depositpending">Deposit Pending</option>
                       <option value="partialpayment">Partial Payment</option>
                       
                       
@@ -1376,7 +1377,7 @@ useEffect(() => {
                   <div className="date-row" style={{  width: '700px',display:'flex', }}>
 
 
-                  <div className="payment-form-row" style={{ flex: '0 0 45%', marginRight: '0px' }}>
+                  <div className="payment-form-row2" style={{ flex: '0 0 45%', marginRight: '0px' }}>
                     <label>1st Payment Mode </label>
                     <select
                       value={userDetails.firstpaymentmode}
@@ -1401,7 +1402,7 @@ useEffect(() => {
                   </div>
                   <div className="date-row" style={{  width: '700px',display:'flex', }}>
 
-                  <div className="payment-form-row" style={{ flex: '0 0 45%', marginRight: '0px' }}>
+                  <div className="payment-form-row2" style={{ flex: '0 0 45%', marginRight: '0px' }}>
                     <label>2nd Payment Mode (if any) </label>
                     <select
                       value={userDetails.secondpaymentmode}

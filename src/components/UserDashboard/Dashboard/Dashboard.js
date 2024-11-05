@@ -47,6 +47,7 @@ const Dashboard = () => {
               ...bookingData,
               pickupDate: bookingData.pickupDate.toDate(),
               returnDate: bookingData.returnDate.toDate(),
+              createdAt:  bookingData.createdAt || null,
               stage: bookingData.userDetails?.stage 
             });
 
@@ -102,10 +103,13 @@ const Dashboard = () => {
     const calculateTodaysBookings = (allBookings) => {
       const today = new Date();
       const uniqueTodaysBookings = getUniqueBookingsByReceiptNumber(
-        allBookings.filter((booking) => isSameDay(new Date(booking.pickupDate), today))
+        allBookings.filter((booking) => 
+          booking.createdAt && booking.createdAt.toDate && isSameDay(new Date(booking.createdAt.toDate()), today)
+        )
       );
       setTodaysBookings(uniqueTodaysBookings.length);
     };
+    
 
     const calculateBookingStages = (allBookings) => {
       const today = new Date();

@@ -3,7 +3,7 @@
   margin-top: 80px;
   width: 100%;
   max-height: 500px; /* Adjust as needed for vertical overflow */
-  overflow-y: auto; /* Enable vertical scrolling */
+ /* Enable vertical scrolling */
   position: relative; /* For positioning the scrollbar wrapper */
 }
 

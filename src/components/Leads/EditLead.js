@@ -5,11 +5,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
 import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 import './EditLead.css';
+import Header from './Header';
+import Sidebar from './Sidebar';
 
 const EditLead = () => {
   const { id } = useParams(); // Get lead ID from URL
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const navigate = useNavigate();
-  
+
+    const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
   const [formData, setFormData] = useState({
     businessName: '',
     contactNumber: '',
@@ -69,13 +76,16 @@ const EditLead = () => {
     }
   };
 
-  // Simple test to ensure toast notifications work
-  const testToast = () => toast.success("Test Toast Success!");
+
 
   return (
-    <div className="create-branch">
+      <div className={`dashboard-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
+      <div className="dashboard-content">
+        <Header onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
+      <div className='create-branch'>
       <h2>Edit Lead</h2>
-      <button onClick={testToast}>Show Test Toast</button>
+      
       <form onSubmit={handleUpdateLead}>
         <div className="field-row">
           <div>
@@ -166,11 +176,13 @@ const EditLead = () => {
           </div>
         </div>
 
-        <button type="submit">Edit Lead</button>
+        <button className='bu' type="submit">Edit Lead</button>
       </form>
       
       {/* Toast Container for Notifications */}
       <ToastContainer />
+    </div>
+    </div>
     </div>
   );
 };

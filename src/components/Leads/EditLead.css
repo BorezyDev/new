@@ -55,7 +55,7 @@
   }
   
   .create-branch button[type="button"] {
-    background-color: #007bff;
+    background-color: #28a745;
     color: white;
     border: none;
     padding: 5px 10px;
@@ -71,15 +71,17 @@
     width: 131px;
     height: 40px;
     color: #ffffff;
-    background: linear-gradient(187.36deg, #175CFF 5.38%, #0E3799 93.96%);
+    background-color: #28a745;
     border-radius: 10px;
     border-color: #ffffff;
   }
   
   .create-branch button[type="submit"]:hover {
-    background-color: linear-gradient(187.36deg, #175CFF 5.38%, #0E3799 93.96%);
+    background-color: #23913d;
   }
-  
+  .bu{
+    background-color: #28a745;
+  }
   .create-branch .error-message {
     color: red;
     font-weight: bold;

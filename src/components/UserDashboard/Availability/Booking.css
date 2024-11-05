@@ -115,7 +115,7 @@
   
    /* Add some padding for spacing */
     box-sizing: border-box;
-    padding-top: 20px;
+    padding-top: 0px;
     
    
    
@@ -125,11 +125,35 @@
   }
   .form-group1 input {
     background: #EEEEEE;
+    
     border-radius: 5px;
     height: 30px;
     width:200px;
   }
 
+  .customer-details-form .form-group1 select {
+    margin-left: 10px;
+    
+  }
+  .receipt-column1 {
+    flex: 1;
+    width: 600px; /* Adjust as needed */
+    padding: 05px;
+    text-align: center;
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 16px;
+    margin-left: 0%;
+    margin-top: 0%;
+    background-color: #f9f9f9;
+    color: #000000;
+  }
+  .receipt-column1 input{
+    width:600px
+    
+  }
   /* Image section */
   .product-image-container1{
    margin-top: -300px;
@@ -188,7 +212,7 @@
   .form-group1 button {
     width: 100%;
    
-    
+    padding: 5px;
     border-radius: 5px;
     border: 1px solid #ccc;
     font-size: 16px;
@@ -402,8 +426,10 @@
 
 .product-check{
   height: fit-content;
-  width:150%
-  ;
+  width:150%;
+  border-color: #ffffff;
+  
+  
 }
 .receipt-container span{
   color: #000000;
@@ -437,4 +463,36 @@
 }
 .payment-form-row label {
   padding:10px;
+  font-family: 'Public Sans';
+  font-style:normal;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 19px;
+  /* identical to box height */
+  
+
+  color: #000000;
+
+}
+
+.payment-form-row2 label {
+  padding:10px;
+  font-family: 'Public Sans';
+  font-style:normal;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 19px;
+  /* identical to box height */
+  
+
+  color: #000000;
+}
+.payment-form-row2 select {
+  width: 100px;
+  padding:10px;
+  margin-left: 10px;
+}
+.payment-form-row select{
+  padding:10px;
+  margin-left: 10px;
 }

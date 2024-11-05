@@ -4,7 +4,7 @@ import { db } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import '../Admin/AdminDashboard.css';
 import editIcon from '../../assets/Edit.png';
-import deleteIcon from '../../assets/Trash Can - Copy.png';
+
 import Header from './Header';
 import Sidebar from './Sidebar';
 import search from '../../assets/Search.png'
@@ -94,7 +94,7 @@ const DetailsShared = () => {
           <table className="table">
             <thead>
               <tr>
-                <th>Serial No.</th>
+                <th>Sr. No.</th>
                 <th>Business Name</th>
                 <th>Business Type</th>
                 <th>Contact Number</th>
