@@ -27,11 +27,11 @@ const UserSidebar = ({ isOpen }) => {
           <li className="sidebar-greeting1">Welcome,</li>
           <li className="sidebar-greeting">{userData.name}</li>
 
-          <li className={`sidebar-link ${location.pathname === '/usersidebar/billing' ? 'active' : ''}`}>
+          {/* <li className={`sidebar-link ${location.pathname === '/usersidebar/billing' ? 'active' : ''}`}>
             <Link to="/usersidebar/billing" style={{ display: 'flex', alignItems: 'center' }}>
               <FaPlusSquare style={{ fontSize: '15px', color: '#757575', marginRight: '20px'}} />  Billing
             </Link>
-          </li>
+          </li> */}
 
           <li className={`sidebar-link ${location.pathname === '/usersidebar/dashboard' ? 'active' : ''}`}>
             <Link to="/usersidebar/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
