@@ -133,7 +133,7 @@ function AddProduct() {
       // Add an empty bookings sub-collection
       await addDoc(collection(productRef, 'bookings'), {}); // Empty document with bookingId as ID
 
-      alert('Product and bookings added successfully!');
+      alert('Product  added successfully!');
       navigate('/productdashboard');
       
       // Reset form

@@ -10,6 +10,7 @@ import search from '../../assets/Search.png'; // Import search icon
 import downloadIcon from '../../assets/Download.png'; // Import download icon
 import uploadIcon from '../../assets/Upload.png'; // Import upload icon
 import { useUser } from '../Auth/UserContext';
+import { FaSearch, FaFilter, FaDownload, FaUpload, FaPlus, FaEdit, FaTrash, FaCopy } from 'react-icons/fa';
 
 const UserDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -199,12 +200,12 @@ const UserDashboard = () => {
             />
           </div>
           <div className="action-buttons">
-            <button onClick={exportToCSV} className="action-button">
-              <img src={downloadIcon} alt="Export" className="icon" />
+          <label className="export-button" onClick={exportToCSV}>
+              <FaDownload/>
               Export
-            </button>
-            <label htmlFor="import" className="action-button">
-              <img src={uploadIcon} alt="Import" className="icon" />
+            </label>
+            <label htmlFor="import" className="import-button">
+              <FaUpload/>
               Import
               <input
                 type="file"
@@ -214,9 +215,9 @@ const UserDashboard = () => {
                 style={{ display: 'none' }}
               />
             </label>
-            <div className="create-branch-container">
-              <button onClick={handleAddUser}>Add New User</button>
-            </div>
+            
+            <label className="add-product-button" onClick={handleAddUser}><FaPlus />Add New User</label> 
+            
           </div>
         </div>
         <div className="table-container">
