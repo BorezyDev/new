@@ -45,6 +45,7 @@ import ProductReport from './components/UserDashboard/productreport';
 import BookingDetailsPage from './components/UserDashboard/Availability/BookingDetailsPage';
 
 const App = () => (
+ 
   <UserProvider>
     <Router>
       <Routes>
@@ -69,6 +70,24 @@ const App = () => (
             <AdminDashboard />
           </PrivateRoute>
         } />
+
+       <Route path="/branches/active" element={
+          <PrivateRoute>
+            <AdminDashboard />
+          </PrivateRoute>
+        } /> 
+          <Route path="/branches/deactive" element={
+          <PrivateRoute>
+            <AdminDashboard />
+          </PrivateRoute>
+        } /> 
+         <Route path="/branches/expiring-soon" element={
+          <PrivateRoute>
+            <AdminDashboard />
+          </PrivateRoute>
+        } /> 
+        
+
 
         <Route path="/leads" element={
           <PrivateRoute>

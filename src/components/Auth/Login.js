@@ -272,7 +272,7 @@ const Login = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton onClick={togglePasswordVisibility} edge="end" sx={{ background: 'transparent' }}>
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                    {showPassword ? <Visibility /> : <VisibilityOff />}
                   </IconButton>
                 </InputAdornment>
               ),
@@ -291,15 +291,15 @@ const Login = () => {
         <p> <Link to="/forgot-password">Forgot your password?</Link></p>
 
         <Button 
-className="sign-in-button" 
-fullWidth 
-variant="contained" 
-type="submit" 
-disabled={loading}
-startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null} // Conditionally show spinner
->
-{loading ? 'Logging-in...' : 'Login'}
-</Button>
+        className="sign-in-button" 
+        fullWidth 
+        variant="contained" 
+        type="submit" 
+        disabled={loading}
+        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null} // Conditionally show spinner
+        >
+        {loading ? 'Logging-in...' : 'Login'}
+        </Button>
 
         {error && <p className="error-message">{error}</p>}
       </form>

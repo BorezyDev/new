@@ -246,10 +246,10 @@ const UserDashboard = () => {
                     <td>{user.role}</td>
                     <td>{user.isActive ? 'Active' : 'Inactive'}</td>
                     <td>
-                      <button onClick={() => handleEdit(user.id)}>Edit</button>
-                      <button onClick={() => handleDelete(user.id)}>Delete</button>
-                      
-                    
+                      <div className="action-buttons">
+                        <label onClick={() => handleEdit(user.id)}><FaEdit style={{ color: '#757575' , cursor: 'pointer'}} /></label>
+                        <label onClick={() => handleDelete(user.id)}><FaTrash style={{ color: '#757575', cursor: 'pointer' }} /></label>
+                      </div>
                     </td>
                   </tr>
                 ))}

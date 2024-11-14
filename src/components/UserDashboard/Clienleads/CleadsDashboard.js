@@ -136,12 +136,13 @@ const ClientLeadsDashboard = () => {
               <option value="requirement">Requirement</option>
               <option value="email">Email</option>
               <option value="source">Source</option>
-              <option value="status">Status</option>
+              <option value="stage">Status</option>
+              <option value="followupDate">Next-Followup Date</option>
               
             </select>
             <input
               type="text"
-              placeholder={`Search by ${searchField}`}
+              placeholder={`Search by..`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

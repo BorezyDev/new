@@ -225,9 +225,9 @@ function AddProduct() {
         <div className="pricing">
           <div className='bottom-left'>
           <label>Base Rent</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
+            <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} required />
             <label>Deposit</label>
-            <input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} required />
+            <input type="text" value={deposit} onChange={(e) => setDeposit(e.target.value)} required />
             <label>Rent Calculated By</label>
             <select value={priceType} onChange={(e) => setPriceType(e.target.value)}>
               <option value= "">Select Price Type</option>
@@ -235,25 +235,18 @@ function AddProduct() {
               <option value="daily">Daily</option>
             </select>
             <label>Minimum Rental Period</label>
-            <input type="number" value={minimumRentalPeriod} onChange={(e) => setMinimumRentalPeriod(e.target.value)} required />
+            <input type="text" value={minimumRentalPeriod} onChange={(e) => setMinimumRentalPeriod(e.target.value)} required />
             <label>Add-On Charges</label>
             <div className="extra-rent-group">
               <input
-                type="number"
+                type="text"
                 value={extraRent}
                 onChange={(e) => setExtraRent(e.target.value)}
                 required
                 style={{ width: '90%' }}
               />
-              {/* Toggle Buttons */}
-              <button
-                type="button"
-                className={`toggle-button ${extraChargeType === '%' ? 'active' : ''}`}
-                onClick={() => setExtraChargeType('%')}
-                
-              >
-                %
-              </button>
+              
+              
               <button
                 type="button"
                 className={`toggle-button ${extraChargeType === '₹' ? 'active' : ''}`}
