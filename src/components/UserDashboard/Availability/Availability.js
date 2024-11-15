@@ -92,7 +92,7 @@ const BookingDashboard = () => {
               userDetails.stage = 'returnPending'; // Update locally for immediate display
             }
 
-            if (userDetails.stage === 'return') {
+            if (returnDateStr >= todayDateStr && userDetails.stage === 'return') {
               const today = new Date();
               await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
                 'returnDate':'today',
