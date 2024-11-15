@@ -95,6 +95,7 @@ const BookingDashboard = () => {
             if (userDetails.stage === 'return') {
               const today = new Date();
               await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                'returnDate':'today',
                 returnDate: today, // Update return date to today
               });
               bookingData.returnDate = today; // Update locally for immediate display
@@ -112,7 +113,29 @@ const BookingDashboard = () => {
               createdAt: createdAt || null,
               stage: userDetails.stage,
               products: [{ productCode, quantity: parseInt(quantity, 10) }],
-            });
+              IdentityProof:userDetails.identityproof || 'N/A',
+              IdentityNumber:userDetails.identitynumber || 'N/A',
+              Source:userDetails.source || 'N/A',
+              CustomerBy:userDetails.customerby || 'N/A',
+              ReceiptBy:userDetails.receiptby || 'N/A',
+              Alterations:userDetails.alterations || 'N/A',
+              SpecialNote:userDetails.specialnote || 'N/A',
+              GrandTotalRent :userDetails.grandTotalRent || 'N/A',
+              DiscountOnRent:userDetails.discountOnRent || 'N/A',
+              FinalRent:userDetails.finalrent || 'N/A',
+              GrandTotalDeposit:userDetails.grandTotalDeposit || 'N/A',
+              DiscountOnDeposit:userDetails.discountOnDeposit || 'N/A',
+              FinalDeposit:userDetails.finaldeposite || 'N/A',
+              AmountToBePaid:userDetails.totalamounttobepaid || 'N/A',
+              AmountPaid:userDetails.amountpaid || 'N/A',
+              Balance:userDetails.balance || 'N/A',
+              PaymentStatus:userDetails.paymentstatus || 'N/A',
+              FirstPaymentDetails:userDetails.firstpaymentdtails || 'N/A',
+              FirstPaymentMode:userDetails.firstpaymentmode || 'N/A',
+              SecondPaymentMode:userDetails.secondpaymentmode || 'N/A',
+              SecondPaymentDetails:userDetails.secondpaymentdetails || 'N/A',
+              
+            })
           }
         }
 

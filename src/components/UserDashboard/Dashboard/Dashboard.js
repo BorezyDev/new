@@ -126,7 +126,7 @@ const Dashboard = () => {
 
       const successful = uniqueBookings.filter((booking) => {
         const bookingReturnDate = new Date(booking.returnDate);
-        return booking.stage === 'return' && isSameDay(bookingReturnDate, today);
+        return booking.stage === 'successful' && isSameDay(bookingReturnDate, today);
       }).length;
 
       setPickupPendingCount(pickupPending);
@@ -154,7 +154,7 @@ const Dashboard = () => {
       const monthlySuccessfulBookings = uniqueBookings.filter((booking) => {
         const returnMonth = new Date(booking.returnDate).getMonth();
         const returnYear = new Date(booking.returnDate).getFullYear();
-        return returnMonth === currentMonth && returnYear === currentYear && booking.stage === 'return';
+        return returnMonth === currentMonth && returnYear === currentYear && booking.stage === 'successful';
       });
 
       const monthlyTotal = uniqueBookings.filter((booking) => {
@@ -183,7 +183,7 @@ const Dashboard = () => {
         {/* <h2 style={{ marginTop: '30px' }}>Dashboard</h2> */}
 
         <div className="sales-report">
-          <h4>Daily Sales Report</h4>
+          <h4>Today's Report</h4>
           <div className="report-cards">
             <div className="card">Today's Booking <br /> {todaysBookings}</div>
             <div className="card">Pick-up Pending <br /> {pickupPendingCount}</div>
@@ -193,7 +193,7 @@ const Dashboard = () => {
         </div>
 
         <div className="sales-overview">
-          <h4>Sales Overview (Monthly)</h4>
+          <h4>Monthly Overview</h4>
           <div className="report-cards">
             <div className="card">Monthly Total Booking <br /> {monthlyTotalBookings}</div>
             <div className="card">Monthly Pick-up Pending <br /> {monthlyPickupPending}</div>
