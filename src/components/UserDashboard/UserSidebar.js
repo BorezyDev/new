@@ -58,11 +58,13 @@ const UserSidebar = ({ isOpen }) => {
             </Link>
           </li>
           
+          {userData?.role !== 'Subuser' && (
           <li className={`sidebar-link ${location.pathname === '/report' ? 'active' : ''}`}>
             <Link to="/report" style={{ display: 'flex', alignItems: 'center' }}>
               <FaRegFileAlt style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Report
             </Link>
           </li>
+          )}
           <li className="sidebar-link logout-button">
             < Link Click={handleLogout} style={{ display: 'flex', alignItems: 'center' }}>
             <FaSignOutAlt style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Logout

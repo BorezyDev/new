@@ -320,8 +320,17 @@ const ProductDashboard = () => {
                     <td>
                       <div className="action-buttons">
                         <label onClick={() => handlecopy(product)}><FaCopy style={{ color: '#757575', cursor: 'pointer' }} /> </label> {/* Pass the product object */}
-                        <label onClick={() => handleEdit(product.id)}><FaEdit style={{ color: '#757575' , cursor: 'pointer'}} /></label>
-                        <label onClick={() => handleDelete(product.id)}><FaTrash style={{ color: '#757575', cursor: 'pointer' }} /></label>
+                        {userData?.role !== 'Subuser' && (
+
+                          <label onClick={() => handleEdit(product.id)}>
+                            <FaEdit style={{ color: '#757575' , cursor: 'pointer'}} />
+                          </label>
+                          )}
+                          {userData?.role !== 'Subuser' && (
+                          <label onClick={() => handleDelete(product.id)}>
+                            <FaTrash style={{ color: '#757575', cursor: 'pointer' }} />
+                          </label>
+                            )}
                       </div>
                     </td>
                   </tr>

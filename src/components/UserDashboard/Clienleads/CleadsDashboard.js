@@ -7,6 +7,7 @@ import Papa from 'papaparse'; // Import PapaParse for CSV operations
 import './CleadsDash.css';
 import CSidebar from '../../UserDashboard/UserSidebar'; // Import the Sidebar component
 import ClientHeader from '../../UserDashboard/UserHeader'; // Import the Header component
+import { useUser } from '../../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
 
 const ClientLeadsDashboard = () => {
   const [leads, setLeads] = useState([]);
@@ -17,6 +18,7 @@ const ClientLeadsDashboard = () => {
   const [searchField, setSearchField] = useState('leadName'); // Search field state
   const [originalLeads, setOriginalLeads] = useState([]);
   const navigate = useNavigate();
+  const { userData } = useUser(); // Access userData from the context
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -200,7 +202,11 @@ const ClientLeadsDashboard = () => {
                       <label onClick={() => handlecopy(lead)}><FaCopy style={{ color: '#757575', cursor: 'pointer' }} /> </label> {/* Pass the product object */}
 
                       <label onClick={() => handleEdit(lead.id)}><FaEdit style={{ color: '#757575' , cursor: 'pointer'}} /></label>
-                      <label onClick={() => handleDelete(lead.id)}><FaTrash style={{ color: '#757575', cursor: 'pointer' }} /></label>
+                      {userData?.role !== 'Subuser' && (
+            <label onClick={() => handleDelete(lead.id)}>
+              <FaTrash style={{ color: '#757575', cursor: 'pointer' }} />
+            </label>
+          )}
                     </div>
                     </td>
                   </tr>
