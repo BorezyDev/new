@@ -105,7 +105,7 @@ const BookingDashboard = () => {
             allBookings.push({
               bookingId,
               receiptNumber,
-              username: userDetails.name,
+              clientname: userDetails.name,
               contactNo: userDetails.contact,
               email: userDetails.email,
               pickupDate: pickupDate ? (pickupDate.toDate ? pickupDate.toDate() : new Date(pickupDate)) : null,
@@ -489,7 +489,7 @@ const BookingDashboard = () => {
                       </td>
 
 
-                      <td>{booking.username}</td>
+                      <td>{booking.clientname}</td>
                       <td>{booking.contactNo}</td>
                       <td>{booking.email}</td>
                       <td>

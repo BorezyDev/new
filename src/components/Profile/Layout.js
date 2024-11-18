@@ -40,10 +40,11 @@ const Layout = () => {
             {/* <NavigationItem to="/transaction" label="Transaction" /> */}
 
             {isBranchManager ? (
+              
               <NavigationItem to="/change-password" label="Change Password" /> // Link to Change Password
             ) : (
               <NavigationItem to="/change-password" label="Change Password" /> // Link to Settings
-      
+              
             )}
             
           </ul>

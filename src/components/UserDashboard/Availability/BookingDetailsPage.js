@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useParams, useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs, updateDoc, doc,arrayUnion } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import './BookingDetailsPage.css';
 
@@ -14,8 +14,14 @@ const BookingDetailsPage = () => {
   const { receiptNumber } = useParams();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [clientType, setClientType] = useState('Booking Pickup Pending');
+  const navigate = useNavigate(); // Initialize navigate
 
+  // State for editing specific fields
+  const [isEditingSecondPayment, setIsEditingSecondPayment] = useState(false);
+  const [secondPaymentMode, setSecondPaymentMode] = useState('');
+  const [secondPaymentDetails, setSecondPaymentDetails] = useState('');
+  const[specialNote,setSpecialNote]= useState('');
+  const[stage,setStage]= useState('');
   useEffect(() => {
     const fetchBookingAndProductDetails = async () => {
       try {
@@ -30,8 +36,22 @@ const BookingDetailsPage = () => {
           const querySnapshot = await getDocs(q);
 
           querySnapshot.docs.forEach((bookingDoc) => {
-            allBookings.push({ ...bookingDoc.data(), product: productDoc.data() });
+            const bookingData = bookingDoc.data();
+            allBookings.push({ 
+              ...bookingData, 
+              id: bookingDoc.id, 
+              productId: productDoc.id,
+              product: productDoc.data()
+            });
           });
+        }
+
+        if (allBookings.length > 0) {
+          const { userDetails } = allBookings[0]; // Assuming all bookings share the same user details
+          setSecondPaymentMode(userDetails?.secondpaymentmode || '');
+          setSecondPaymentDetails(userDetails?.secondpaymentdetails || '');
+          setSpecialNote(userDetails?.specialnote|| '');
+          setStage(userDetails?.stage||'');
         }
 
         setBookings(allBookings);
@@ -45,6 +65,80 @@ const BookingDetailsPage = () => {
     fetchBookingAndProductDetails();
   }, [receiptNumber]);
 
+  const handleSaveSecondPayment = async () => {
+    if (bookings.length === 0) return;
+  
+    const bookingId = bookings[0].id;
+    const productId = bookings[0].productId;
+    const bookingRef = doc(db, 'products', productId, 'bookings', bookingId);
+  
+    try {
+      // Fetch current user details
+      const currentDetails = bookings[0].userDetails || {};
+      const changes = [];
+  
+      // Check for updates and log changes
+      if (currentDetails.secondpaymentmode !== secondPaymentMode) {
+        changes.push({
+          field: 'Second Payment Mode',
+          previous: currentDetails.secondpaymentmode || 'N/A',
+          updated: secondPaymentMode,
+        });
+      }
+  
+      if (currentDetails.secondpaymentdetails !== secondPaymentDetails) {
+        changes.push({
+          field: 'Second Payment Details',
+          previous: currentDetails.secondpaymentdetails || 'N/A',
+          updated: secondPaymentDetails,
+        });
+      }
+  
+      if (currentDetails.specialnote !== specialNote) {
+        changes.push({
+          field: 'Special Note',
+          previous: currentDetails.specialnote || 'N/A',
+          updated: specialNote,
+        });
+      }
+  
+      if (currentDetails.stage !== stage) {
+        changes.push({
+          field: 'Stage',
+          previous: currentDetails.stage || 'N/A',
+          updated: stage,
+        });
+      }
+  
+      // Skip update if no changes
+      if (changes.length === 0) {
+        alert('No changes detected.');
+        return;
+      }
+  
+      // Create a new log entry
+      const newLogEntry = {
+        action: `Updated field`,
+        timestamp: new Date(),
+        updates: changes
+      };
+  
+      // Update the document in Firestore
+      await updateDoc(bookingRef, {
+        'userDetails.secondpaymentmode': secondPaymentMode,
+        'userDetails.secondpaymentdetails': secondPaymentDetails,
+        'userDetails.specialnote': specialNote,
+        'userDetails.stage': stage,
+        activityLog: arrayUnion(newLogEntry),
+      });
+  
+      alert('Details Updated Successfully');
+      setIsEditingSecondPayment(false);
+    } catch (error) {
+      console.error('Error updating second payment details:', error);
+    }
+  };
+  
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -54,12 +148,7 @@ const BookingDetailsPage = () => {
   }
 
   // Get user details from the first booking
-  const userDetails = bookings[0].userDetails || {};
-
-  const handleClientTypeChange = (event) => {
-    setClientType(event.target.value);
-  };
-
+  const userDetails = bookings[0].userDetails || {};  
   return (
     <>
       <div className="booking-details-container">
@@ -85,6 +174,8 @@ const BookingDetailsPage = () => {
 
         {/* Main Content Section */}
         <div className="main-content">
+        <button onClick={() => navigate('/usersidebar/clients')} type="button" className='can'>Back</button>
+
           <h2>Booking Details for Receipt Number: {receiptNumber}</h2>
           <div className="personal-info">
             <h2>Personal Details</h2>
@@ -177,30 +268,91 @@ const BookingDetailsPage = () => {
               <p><strong>Payment Status:</strong> {userDetails.paymentstatus || 'N/A'}</p>
             </div>
             <div className="info-row">
-              <p><strong>firstpaymentdtails:</strong> ₹{userDetails.firstpaymentdtails || 'N/A'}</p>
-              <p><strong>firstpaymentmode:</strong> {userDetails.firstpaymentmode || 'N/A'}</p>
+              <p><strong>First Payment Details:</strong> ₹{userDetails.firstpaymentdtails || 'N/A'}</p>
+              <p><strong>First Payment Mode:</strong> {userDetails.firstpaymentmode || 'N/A'}</p>
             </div>
-            <div className="info-row">
-              <p><strong>secondpaymentmode:</strong> ₹{userDetails.secondpaymentmode || 'N/A'}</p>
-              <p><strong>secondpaymentdetails:</strong> {userDetails.secondpaymentdetails || 'N/A'}</p>
-            </div>
-            <div className="info-row">
-              <p><strong>specialnote:</strong> {userDetails.specialnote || 'N/A'}</p>
-            </div>
+            
           </div>
 
           <div className="client-type-container">
-            <h5>Client Type</h5>
+          <h5>Client Type</h5>
+          {isEditingSecondPayment ? (
+          <div>
             <div className="info-row">
-              <select id="clientType" value={clientType}>
-                <option value="Booking">Booking</option>
-                <option value="Pickup Pending">Pickup Pending</option>
-                <option value="Pickup">Pickup</option>
-                <option value="Return Pending">Return Pending</option>
-                <option value="Return">Return</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+              <label>
+                <strong>Second Payment Mode:</strong>
+                <input
+                  type="text"
+                  value={secondPaymentMode}
+                  onChange={(e) => setSecondPaymentMode(e.target.value)}
+                />
+              </label>
             </div>
+            <div className="info-row">
+              <label>
+                <strong>Second Payment Details:</strong>
+                <input
+                  type="text"
+                  value={secondPaymentDetails}
+                  onChange={(e) => setSecondPaymentDetails(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="info-row">
+              <label>
+                <strong>Special Note:</strong>
+                <input
+                  type="text"
+                  value={specialNote}
+                  onChange={(e) => setSpecialNote(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="info-row">
+              <label>
+                <strong>Stage:</strong>
+                <select
+                  type="text"
+                  value={stage}
+                  onChange={(e) => setStage(e.target.value)}
+                >
+                          <option value="Booking">Booking</option>
+                          <option value="pickupPending">Pickup Pending</option>
+                          <option value="pickup">Picked Up</option>
+                          <option value="returnPending">Return Pending</option>
+                          <option value="return">Returned</option>
+                          <option value="successful">Successful</option>
+
+                          <option value="cancelled">Cancelled</option>
+                          <option value="postponed">Postponed</option>
+                </select>
+              </label>
+            </div>
+            <button onClick={handleSaveSecondPayment}>Save</button>
+            <button onClick={() => setIsEditingSecondPayment(false)}>Cancel</button>
+          </div>
+        ) : (
+          <div>
+            <div className="info-row">
+              <p><strong>Second Payment Mode:</strong> {secondPaymentMode || 'N/A'}</p>
+            </div>
+            <div className="info-row">
+              <p><strong>Second Payment Details:</strong> {secondPaymentDetails || 'N/A'}</p>
+            </div>
+            <div className="info-row">
+              <p><strong>Special Note:</strong> {specialNote || 'N/A'}</p>
+            </div>
+            <div className="info-row">
+              <p><strong>Stage</strong> {stage || 'N/A'}</p>
+            </div>
+            <button onClick={() => setIsEditingSecondPayment(true)}>Update</button>
+          </div>
+        )}
+            
+
+
+            
+            
           </div>
         </div>
       </div>
@@ -208,4 +360,4 @@ const BookingDetailsPage = () => {
   );
 };
 
-export default BookingDetailsPage;
+export default BookingDetailsPage
