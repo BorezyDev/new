@@ -3,18 +3,32 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc,arrayUnion } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import './BookingDetailsPage.css';
+import { useUser } from '../../Auth/UserContext';
+
 
 const formatTimestamp = (timestamp) => {
   if (!timestamp) return 'N/A'; // Handle empty timestamp
-  const date = new Date(timestamp.seconds * 1000); // Convert seconds to milliseconds
-  return date.toLocaleDateString('en-US'); // Return formatted date
+
+  let date;
+  if (timestamp.seconds) {
+    // Firestore Timestamp format
+    date = new Date(timestamp.seconds * 1000);
+  } else {
+    // Assume ISO string
+    date = new Date(timestamp);
+  }
+
+  if (isNaN(date)) return 'Invalid Date'; // Fallback for invalid inputs
+  return `${date.toLocaleDateString('en-US')} ${date.toLocaleTimeString('en-US')}`;
 };
+
 
 const BookingDetailsPage = () => {
   const { receiptNumber } = useParams();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate(); // Initialize navigate
+  const { userData } = useUser(); // Access userData from the context
 
   // State for editing specific fields
   const [isEditingSecondPayment, setIsEditingSecondPayment] = useState(false);
@@ -73,7 +87,6 @@ const BookingDetailsPage = () => {
     const bookingRef = doc(db, 'products', productId, 'bookings', bookingId);
   
     try {
-      // Fetch current user details
       const currentDetails = bookings[0].userDetails || {};
       const changes = [];
   
@@ -83,6 +96,7 @@ const BookingDetailsPage = () => {
           field: 'Second Payment Mode',
           previous: currentDetails.secondpaymentmode || 'N/A',
           updated: secondPaymentMode,
+          updatedby:userData.name,
         });
       }
   
@@ -91,6 +105,7 @@ const BookingDetailsPage = () => {
           field: 'Second Payment Details',
           previous: currentDetails.secondpaymentdetails || 'N/A',
           updated: secondPaymentDetails,
+          updatedby:userData.name,
         });
       }
   
@@ -99,6 +114,7 @@ const BookingDetailsPage = () => {
           field: 'Special Note',
           previous: currentDetails.specialnote || 'N/A',
           updated: specialNote,
+          updatedby:userData.name,
         });
       }
   
@@ -107,6 +123,7 @@ const BookingDetailsPage = () => {
           field: 'Stage',
           previous: currentDetails.stage || 'N/A',
           updated: stage,
+          updatedby:userData.name,
         });
       }
   
@@ -116,14 +133,21 @@ const BookingDetailsPage = () => {
         return;
       }
   
-      // Create a new log entry
+      // Create a detailed log entry
+      const updateDetails = changes
+        .map(
+          (change) =>
+            `${change.field} updated from "${change.previous}" to "${change.updated}" by "${change.updatedby}"`
+        )
+        .join(', ');
+  
       const newLogEntry = {
-        action: `Updated field`,
-        timestamp: new Date(),
-        updates: changes
+        action: `Updated: ${updateDetails}`,
+        timestamp: new Date().toISOString(),
+        updates: changes,
       };
   
-      // Update the document in Firestore
+      // Update Firestore document
       await updateDoc(bookingRef, {
         'userDetails.secondpaymentmode': secondPaymentMode,
         'userDetails.secondpaymentdetails': secondPaymentDetails,
@@ -154,23 +178,25 @@ const BookingDetailsPage = () => {
       <div className="booking-details-container">
         {/* Activity Log Section at the Top Right */}
         <div className="activity-log-container">
-          <h3>Activity Log</h3>
-          {bookings.map((booking, index) => (
-            <div key={index} className="activity-log">
-              {booking.activityLog && booking.activityLog.length > 0 ? (
-                <ul>
-                  {booking.activityLog.map((log, logIndex) => (
-                    <li key={logIndex}>
-                      <p>{formatTimestamp(log.timestamp)}: {log.action}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No activity log available for this booking.</p>
-              )}
-            </div>
-          ))}
-        </div>
+    <h3>Activity Log</h3>
+    {bookings.map((booking, index) => (
+      <div key={index} className="activity-log">
+        {booking.activityLog && booking.activityLog.length > 0 ? (
+          <ul>
+            {booking.activityLog.map((log, logIndex) => (
+              <li key={logIndex}>
+                <p>
+                  {formatTimestamp(log.timestamp)}: {log.action}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No activity log available for this booking.</p>
+        )}
+      </div>
+    ))}
+  </div>
 
         {/* Main Content Section */}
         <div className="main-content">
