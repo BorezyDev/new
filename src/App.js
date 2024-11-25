@@ -1,3 +1,6 @@
+
+import CreateTemplatePage from './components/UserDashboard/CreateTemplatePage';
+import TemplatesDashboard from './components/UserDashboard/TemplatesDashboard';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
@@ -267,6 +270,16 @@ const App = () => (
         <Route path="/booking-details/:receiptNumber" element={
           <PrivateRoute>
             <BookingDetailsPage />
+          </PrivateRoute>
+        } />
+        <Route path="/templates-dashboard" element={
+          <PrivateRoute>
+            <TemplatesDashboard />
+          </PrivateRoute>
+        } />
+        <Route path="/addtemplate" element={
+          <PrivateRoute>
+            <CreateTemplatePage />
           </PrivateRoute>
         } />
 

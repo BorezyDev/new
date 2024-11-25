@@ -6,10 +6,11 @@ import UserHeader from '../../UserDashboard/UserHeader';
 import UserSidebar from '../../UserDashboard/UserSidebar';
 import { useUser } from '../../Auth/UserContext';
 import search from '../../../assets/Search.png';
-import { FaSearch, FaDownload, FaUpload, FaPlus, FaEdit, FaTrash, FaCopy } from 'react-icons/fa';
+import { FaSearch, FaDownload, FaUpload, FaPlus, FaEdit, FaTrash, FaCopy,FaWhatsapp } from 'react-icons/fa';
 import Papa from 'papaparse';
 import './Availability.css'; // Create CSS for styling
 import { format } from 'date-fns';
+import { Label } from 'recharts';
 
 
 const BookingDashboard = () => {
@@ -29,10 +30,14 @@ const BookingDashboard = () => {
   const navigate = useNavigate();
   const [stageFilter, setStageFilter] = useState('all'); // New state for filtering by stage
   const { userData } = useUser();
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [selectedContactNo, setSelectedContactNo] = useState(null);
 
   const handleBookingClick = (booking) => {
-    setSelectedReceiptNumber(booking.receiptNumber); // Set the selected receipt number
+    setSelectedReceiptNumber(booking.receiptNumber); 
     navigate(`/booking-details/${booking.receiptNumber}`, { state: { booking } });
   };
 
@@ -377,7 +382,95 @@ const BookingDashboard = () => {
     }
 };
 
+useEffect(() => {
+  const fetchTemplates = async () => {
+    try {
+      const templatesCol = collection(db, "templates");
+      const templatesSnapshot = await getDocs(templatesCol);
+      const templatesList = templatesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTemplates(templatesList);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+    }
+  };
 
+  fetchTemplates();
+}, []);
+
+// Prevent background scrolling when modal is open
+useEffect(() => {
+  document.body.style.overflow = isModalOpen ? "hidden" : "auto";
+}, [isModalOpen]);
+
+// Function to send WhatsApp message
+const sendWhatsAppMessage = (contactNo, message) => {
+  if (!contactNo) {
+    console.error("No contact number provided!");
+    return;
+  }
+
+  const whatsappURL = `https://api.whatsapp.com/send?phone=${contactNo}&text=${encodeURIComponent(message)}`;
+  window.open(whatsappURL, "_blank");
+};
+
+// Handle template click and send WhatsApp message
+const handleTemplateClick = (template) => {
+  if (!selectedBooking) {
+    console.error("No booking selected!");
+    return;
+  }
+
+  const templateBody = template.body;
+
+  // Replace placeholders with booking data
+  const message = templateBody
+    .replace("{clientName}", selectedBooking.clientname || "")
+    .replace("{clientEmail}", selectedBooking.email || "")
+    .replace("{CustomerBy}", selectedBooking.CustomerBy || "")
+    .replace("{ReceiptBy}", selectedBooking.ReceiptBy || "")
+    .replace("{Alterations}", selectedBooking.Alterations|| "")
+    .replace("{SpecialNote}", selectedBooking.SpecialNote|| "")
+    .replace("{GrandTotalRent}", selectedBooking.GrandTotalRent|| "")
+    .replace("{DiscountOnRent}", selectedBooking.DiscountOnRent|| "")
+    .replace("{FinalRent}", selectedBooking.FinalRent|| "")
+    .replace("{GrandTotalDeposit}", selectedBooking.GrandTotalDeposit|| "")
+    .replace("{DiscountOnDeposit}", selectedBooking.DiscountOnDeposit|| "")
+    .replace("{FinalDeposit}", selectedBooking.FinalDeposit|| "")
+    .replace("{AmountToBePaid}", selectedBooking.AmountToBePaid|| "")
+    .replace("{AmountPaid}", selectedBooking.AmountPaid|| "")
+    .replace("{Balance}", selectedBooking.Balance|| "")
+    .replace("{PaymentStatus}", selectedBooking.PaymentStatus|| "")
+    .replace("{FirstPaymentDetails}", selectedBooking.FirstPaymentDetails|| "")
+    .replace("{FirstPaymentMode}", selectedBooking.FirstPaymentMode|| "")
+    .replace("{SecondPaymentMode}", selectedBooking.SecondPaymentMode|| "")
+    .replace("{SecondPaymentDetails}", selectedBooking.SecondPaymentDetails|| "")
+    
+
+
+
+    .replace("{pickupDate}", selectedBooking.pickupDate || "")
+    .replace("{returnDate}", selectedBooking.returnDate || "")
+    .replace("{receiptNumber}", selectedBooking.receiptNumber || "")
+    .replace("{stage}", selectedBooking.stage || "")
+    .replace("{ContactNo}", selectedBooking.contactNo || "")
+    .replace("{IdentityProof}", selectedBooking.IdentityProof || "")
+    .replace("{IdentityNumber}", selectedBooking.IdentityNumber || "");
+
+  sendWhatsAppMessage(selectedContactNo, message);
+
+  // Close modal after sending the message
+  setIsModalOpen(false);
+};
+
+// Handle contact number selection
+const handleContactNumberClick = (booking) => {
+  setSelectedContactNo(booking.contactNo);
+  setSelectedBooking(booking);
+  setIsModalOpen(true);
+};
   return (
     <div className={`dashboard-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <UserSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
@@ -468,7 +561,7 @@ const BookingDashboard = () => {
                     <th>Return Date</th>
                     
                     <th>Stage</th>
-                    
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -490,7 +583,8 @@ const BookingDashboard = () => {
 
 
                       <td>{booking.clientname}</td>
-                      <td>{booking.contactNo}</td>
+                      <td>{booking.contactNo
+                        }</td>
                       <td>{booking.email}</td>
                       <td>
                             {booking.products.map((product) => (
@@ -519,6 +613,95 @@ const BookingDashboard = () => {
 
                         </select>
                       </td>
+                      <td>
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleContactNumberClick(booking)}
+                          style={{
+                            padding: "10px",
+                            borderRadius: "5px",
+                            backgroundColor: "#25D366",
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <FaWhatsapp style={{ marginRight: "5px" }} />
+                        </button>
+
+                        {/* Modal for Templates */}
+                        {isModalOpen && (
+                          <>
+                            {/* Modal Background Overlay */}
+                            <div
+                              onClick={() => setIsModalOpen(false)}
+                              style={{
+                                position: "fixed",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                backgroundColor: "transparent", // Dimming effect
+                                zIndex: 999,
+                              }}
+                            ></div>
+
+                            {/* Modal Popup */}
+                            <div
+                              style={{
+                                position: "fixed",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                backgroundColor: "white",
+                                padding: "20px",
+                                borderRadius: "10px",
+                                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                                zIndex: 1000,
+                                maxWidth: "400px",
+                                width: "90%",
+                              }}
+                            >
+                              <h3>Select a Template</h3>
+                              <ul style={{ listStyleType: "none", padding: 0 }}>
+                                {templates.map((template) => (
+                                  <li
+                                    key={template.id}
+                                    onClick={() => handleTemplateClick(template)}
+                                    style={{
+                                      padding: "10px",
+                                      margin: "5px 0",
+                                      border: "1px solid #ddd",
+                                      borderRadius: "5px",
+                                      cursor: "pointer",
+                                      backgroundColor: "#f9f9f9",
+                                    }}
+                                  >
+                                    {template.name}
+                                  </li>
+                                ))}
+                              </ul>
+                              <button
+                                onClick={() => setIsModalOpen(false)}
+                                style={{
+                                  marginTop: "10px",
+                                  padding: "10px",
+                                  borderRadius: "5px",
+                                  backgroundColor: "#ccc",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                    </td>
                       
                     </tr>
                   ))}
