@@ -135,17 +135,18 @@ const BookingDetailsPage = () => {
   
       // Create a detailed log entry
       const updateDetails = changes
-        .map(
-          (change) =>
-            `${change.field} updated from "${change.previous}" to "${change.updated}" by "${change.updatedby}"`
-        )
-        .join(', ');
-  
-      const newLogEntry = {
-        action: `Updated: ${updateDetails}`,
-        timestamp: new Date().toISOString(),
-        updates: changes,
-      };
+  .map(
+    (change) =>
+      `${change.field} \n  updated from "${change.previous}" \n  to "${change.updated}" \n  by "${change.updatedby}"\n`
+  )
+  .join('\n\n'); // Add extra spacing between changes for readability
+
+const newLogEntry = {
+  action: `Updated:\n${updateDetails}`,
+  timestamp: new Date().toISOString(),
+  updates: changes,
+};
+
   
       // Update Firestore document
       await updateDoc(bookingRef, {
@@ -180,22 +181,23 @@ const BookingDetailsPage = () => {
         <div className="activity-log-container">
     <h3>Activity Log</h3>
     {bookings.map((booking, index) => (
-      <div key={index} className="activity-log">
-        {booking.activityLog && booking.activityLog.length > 0 ? (
-          <ul>
-            {booking.activityLog.map((log, logIndex) => (
-              <li key={logIndex}>
-                <p>
-                  {formatTimestamp(log.timestamp)}: {log.action}
-                </p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No activity log available for this booking.</p>
-        )}
-      </div>
-    ))}
+  <div key={index} className="activity-log">
+    {booking.activityLog && booking.activityLog.length > 0 ? (
+      <ul>
+        {booking.activityLog.map((log, logIndex) => (
+          <li key={logIndex}>
+            <pre className="log-entry">
+              {formatTimestamp(log.timestamp)}: {log.action}
+            </pre>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p>No activity log available for this booking.</p>
+    )}
+  </div>
+))}
+
   </div>
 
         {/* Main Content Section */}
@@ -354,8 +356,8 @@ const BookingDetailsPage = () => {
                 </select>
               </label>
             </div>
-            <button onClick={handleSaveSecondPayment}>Save</button>
-            <button onClick={() => setIsEditingSecondPayment(false)}>Cancel</button>
+            <button className='button' onClick={handleSaveSecondPayment}>Save</button>
+            <button className='button1' onClick={() => setIsEditingSecondPayment(false)}>Cancel</button>
           </div>
         ) : (
           <div>

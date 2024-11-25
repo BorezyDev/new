@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink ,useNavigate} from 'react-router-dom';
 import { useUser } from '../Auth/UserContext'; // Import the context
 import logo from '../../assets/profile-logo.png';
 import './Profile.css';
@@ -12,7 +12,7 @@ const NavigationItem = ({ to, label }) => (
 
 const Layout = () => {
   const { userData } = useUser(); // Access userData from the context
-
+  const navigate =useNavigate();
   const isBranchManager = userData.role === 'Branch Manager';
   const isSuperAdmin = userData.role === 'Super Admin';
   const issubusers = userData.role === 'Subuser ';
@@ -21,6 +21,8 @@ const Layout = () => {
   return (
     <div className="dashboard-container1">
       <header className="header">
+      <button onClick={() => navigate('/dashboard')} type="button" className='button10'>Back To Dashboard</button>
+
         <div className="logo">
           <img src={logo} alt="BOREZY Logo" />
         </div>
@@ -40,11 +42,10 @@ const Layout = () => {
             {/* <NavigationItem to="/transaction" label="Transaction" /> */}
 
             {isBranchManager ? (
-              
               <NavigationItem to="/change-password" label="Change Password" /> // Link to Change Password
             ) : (
               <NavigationItem to="/change-password" label="Change Password" /> // Link to Settings
-              
+      
             )}
             
           </ul>
