@@ -385,7 +385,12 @@ const BookingDashboard = () => {
 useEffect(() => {
   const fetchTemplates = async () => {
     try {
-      const templatesCol = collection(db, "templates");
+      const templatesCol =query(
+        collection(db, "templates"),
+        where('branchCode', '==', userData.branchCode)
+
+      );
+
       const templatesSnapshot = await getDocs(templatesCol);
       const templatesList = templatesSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -412,9 +417,15 @@ const sendWhatsAppMessage = (contactNo, message) => {
     return;
   }
 
-  const whatsappURL = `https://api.whatsapp.com/send?phone=${contactNo}&text=${encodeURIComponent(message)}`;
+  // Check if the contact number starts with +91 or not
+  const formattedContactNo = contactNo.startsWith("+91")
+    ? contactNo
+    : `+91${contactNo}`;
+
+  const whatsappURL = `https://api.whatsapp.com/send?phone=${formattedContactNo}&text=${encodeURIComponent(message)}`;
   window.open(whatsappURL, "_blank");
 };
+
 
 // Handle template click and send WhatsApp message
 const handleTemplateClick = (template) => {

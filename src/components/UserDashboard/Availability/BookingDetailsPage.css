@@ -136,52 +136,147 @@ label {
 
 /* Activity Log Section - Fixed to the top right, separate from the main content */
 .activity-log-container {
-  position: fixed; /* Make the activity log fixed on the screen */
-  top: 40px; /* Position it from the top */
-  right: 15px; /* Position it from the right */
-  width: 340px; /* Adjust width */
-  background-color: #f5f5f5;
-  padding: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  z-index: 1000; /* Ensure it appears above other content */
+  margin: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .activity-log-container h3 {
-  font-size: 1.2rem;
-  color: #444;
-  margin-bottom: 15px;
-}
-
-.activity-log-container ul {
-  list-style-type: none;
-  padding-left: 0;
-}
-
-.activity-log-container ul li {
-  background-color: #fff;
-  padding: 10px;
+  font-size: 1.5rem;
+  color: #333;
+  text-align: center;
   margin-bottom: 10px;
-  border-radius: 4px;
+  position: relative;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.activity-log {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: slideIn 0.6s ease forwards;
 }
 
-.activity-log-container ul li:hover {
-  background-color: #f1f1f1;
+.activity-log ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
 
-.activity-log-container ul li p {
+.activity-log ul li {
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+  font-size: 1rem;
+  color: #555;
+  display: flex;
+  justify-content: space-between;
+  transition: background-color 0.3s ease;
+}
+
+.activity-log ul li:last-child {
+  border-bottom: none;
+}
+
+.activity-log ul li p {
   margin: 0;
   font-size: 0.9rem;
-  color: #555;
+  color: #666;
 }
 
-/* Adjustments for responsiveness */
-@media (max-width: 768px) {
-  .activity-log-container {
-    position: static; /* Revert to default positioning for small screens */
-    margin-top: 20px;
-    width: 100%; /* Full width on smaller screens */
+.activity-log ul li:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.activity-log ul li p::before {
+  content: '🔹';
+  margin-right: 5px;
+  color: #4caf50;
+}
+
+.activity-log ul li p span {
+  font-weight: bold;
+  color: #4caf50;
+}
+
+/* Smooth scroll for new logs */
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
   }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Scrollbar Styling */
+.activity-log-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.activity-log-container::-webkit-scrollbar-thumb {
+  background: #4caf50;
+  border-radius: 4px;
+}
+
+.activity-log-container::-webkit-scrollbar-thumb:hover {
+  background: #388e3c;
+}
+
+.activity-log-container::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+.log-entry {
+  white-space: pre-wrap; /* Preserve line breaks and wrap text */
+  font-family: 'Courier New', Courier, monospace; /* Monospaced font for clarity */
+  line-height: 1.5; /* Spacing between lines */
+  margin: 5px 0; /* Spacing between logs */
+  background-color: #f5f5f5; /* Subtle background for better visibility */
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  color: #333; /* Text color */
+}
+
+.button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.17rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.button1 {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.17rem;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }

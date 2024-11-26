@@ -76,6 +76,8 @@ const ChangePassword = () => {
           required
           fullWidth
         />
+       <Button variant="contained" fullWidth onClick={() => navigate('/usersidebar/dashboard')} type="button" className='can'>Cancel</Button>
+
         <Button type="submit" variant="contained" fullWidth>
           Change Password
         </Button>
