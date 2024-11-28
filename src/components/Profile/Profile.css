@@ -24,13 +24,30 @@
   overflow: hidden; /* Hide overflow within the container */
   box-sizing: border-box; /* Ensure padding doesn't cause overflow */
 }
-
+.button10{
+  
+height: 50px;
+width: 50px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.17rem;
+  cursor: pointer;
+}
+.button10:hover{
+  padding: 10px 20px;
+  
+  
+  border: none;
+  border-radius: 4px;
+  font-size: 1.17rem;
+  cursor: pointer;
+}
 .dashboard-container1 {
   display: flex;
   flex-direction: column;
-  max-width: 1200px; /* Constrain the width for desktop */
+  /* Constrain the width for desktop */
   height: 100vh; /* Make container take the full height of the viewport */
-  margin: auto; /* Center the container on the page */
+ /* Center the container on the page */
   overflow: hidden; /* Hide overflow within the container */
   box-sizing: border-box; /* Ensure padding doesn't cause overflow */
 }
@@ -61,7 +78,7 @@ main {
 
 /* Logo styling */
 .logo {
-  margin-right: 20px; /* Space between logo and profile */
+  margin-right: 5px;
   display: flex; /* Ensure logo elements are aligned correctly */
   align-items: center; /* Vertically center logo content */
 }
@@ -74,11 +91,12 @@ main {
 /* Profile styling */
 .profile h3 {
   margin: 0;
+  margin-left: 10px;
   font-size: 18px;
 }
 
 .profile p {
-  margin: 5px 0 10px 0;
+  margin: 10px  10px 0;
   font-size: 14px;
   color: #666;
 }

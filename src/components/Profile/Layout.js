@@ -3,7 +3,7 @@ import { Outlet, NavLink ,useNavigate} from 'react-router-dom';
 import { useUser } from '../Auth/UserContext'; // Import the context
 import logo from '../../assets/profile-logo.png';
 import './Profile.css';
-
+import backIcon from '../../assets/icons8-back-30.png'
 const NavigationItem = ({ to, label }) => (
   <li>
     <NavLink to={to}>{label}</NavLink>
@@ -21,7 +21,13 @@ const Layout = () => {
   return (
     <div className="dashboard-container1">
       <header className="header">
-      <button onClick={() => navigate('/dashboard')} type="button" className='button10'>Back To Dashboard</button>
+      <div >
+        <img
+          src={backIcon}
+          alt="button10"
+          onClick={() => navigate('/dashboard')} // Navigate to the profile page
+        />
+      </div>
 
         <div className="logo">
           <img src={logo} alt="BOREZY Logo" />
@@ -35,7 +41,7 @@ const Layout = () => {
       <div className='profile1'>
         <nav>
           <ul>
-            <NavigationItem to={isBranchManager ? "/overview" : "/profile"} label="Overview" />
+            <NavigationItem to={isBranchManager ? "/addtemplate" : "/addtemplate"} label="Create Template" />
 
             <NavigationItem to={isSuperAdmin ? "/superadmin" : "/usersidebar/users"} label={isSuperAdmin ? "Super Admin" : "Create Users"} />
 
