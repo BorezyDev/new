@@ -98,7 +98,49 @@ const ProductDashboard = () => {
   }, [searchQuery, searchField]);
 
   const exportToCSV = () => {
-    const csv = Papa.unparse(products);
+    // Define the desired column order and their corresponding labels
+    const columnLabels = {
+      productCode: 'productCode',
+      productName: 'productName',
+      brandName: 'brandName',
+      description: 'description',
+      imageUrls: 'imageUrls',
+      price: 'Rent', // Map the 'price' field to 'Rent'
+      deposit: 'deposit',
+      quantity: 'quantity',
+      priceType: 'priceType',
+      minimumRentalPeriod: 'minimumRentalPeriod',
+      extraRent: 'extraRent',
+      // Add custom field labels dynamically if needed
+      ...customFields.reduce((acc, field) => {
+        acc[field] = field; // Default to field name if no label is provided
+        return acc;
+      }, {}),
+    };
+  
+    // Rearrange the data according to the column order
+    const rearrangedData = products.map(product => {
+      const formattedProduct = {};
+  
+      Object.keys(columnLabels).forEach(field => {
+        // Handle customFields dynamically
+        if (customFields.includes(field)) {
+          formattedProduct[columnLabels[field]] = product.customFields?.[field] || '-';
+        } else {
+          formattedProduct[columnLabels[field]] = product[field] || '-';
+        }
+      });
+  
+      return formattedProduct;
+    });
+  
+    // Use Papa.unparse to generate the CSV
+    const csv = Papa.unparse({
+      fields: Object.values(columnLabels), // Specify the column headers
+      data: rearrangedData,
+    });
+  
+    // Create a blob and download the CSV
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     if (link.download !== undefined) {
@@ -111,6 +153,7 @@ const ProductDashboard = () => {
       document.body.removeChild(link);
     }
   };
+  
 
  // Ensure you have the Firebase config file with Firestore initialization
 
@@ -118,71 +161,78 @@ const ProductDashboard = () => {
  
   // Ensure this imports a valid Firestore instance
  
- const handleImport = (event) => {
-   const file = event.target.files[0];
-   console.log('Selected file:', file); // Log the selected file
- 
-   if (file) {
-     Papa.parse(file, {
-       header: true,
-       complete: async (result) => {
-         console.log('Parsed CSV Data:', result.data); // Log parsed CSV data
- 
-         const importedProducts = result.data
-           .filter(row => row && Object.keys(row).length > 0) // Filter out empty rows
-           .map(row => {
-             const { customFields, imageUrls, ...productWithoutCustomFields } = row; // Exclude customFields
-             
-             // Safeguard for imageUrls
-             let imageUrlsArray = [];
-             if (imageUrls) {
-               try {
-                 imageUrlsArray = Array.isArray(imageUrls) 
-                   ? imageUrls 
-                   : imageUrls.split(',').map(url => url.trim()); // Split by comma and trim
-               } catch (error) {
-                 console.error('Error parsing imageUrls:', error);
-               }
-             }
- 
-             return { 
-               ...productWithoutCustomFields, 
-               imageUrls: imageUrlsArray // Save imageUrls as an array
-             }; 
-           });
- 
-         // Check if there are products to save
-         if (importedProducts.length === 0) {
-           console.warn('No products to import.');
-           return;
-         }
- 
-         // Loop through each product and save to Firestore using productCode as the document ID
-         await Promise.all(importedProducts.map(async (product) => {
-           try {
-             // Ensure productCode is defined
-             if (!product.productCode) {
-               console.error('Product code is missing:', product);
-               return; // Skip saving this product
-             }
- 
-             const productRef = doc(db, 'products', product.productCode); // Create a reference using productCode
-             await setDoc(productRef, product); // Set the document with product data
-             console.log('Product saved successfully:', product);
-           } catch (error) {
-             console.error('Error saving product to Firestore:', error, product);
-           }
-         }));
- 
-         setImportedData(importedProducts); // Store the imported products locally if needed
-         console.log('Imported products:', importedProducts);
-       },
-       error: (error) => {
-         console.error('Error parsing CSV:', error);
-       }
-     });
-   }
- };
+  const handleImport = (event) => {
+    const file = event.target.files[0];
+    console.log('Selected file:', file); // Log the selected file
+  
+    if (file) {
+      Papa.parse(file, {
+        header: true,
+        complete: async (result) => {
+          console.log('Parsed CSV Data:', result.data); // Log parsed CSV data
+  
+          const importedProducts = result.data
+            .filter(row => row && Object.keys(row).length > 0) // Filter out empty rows
+            .map(row => {
+              const { customFields, imageUrls, Rent, ...productWithoutCustomFields } = row; // Exclude customFields
+              
+              // Map "Rent" to "price"
+              const product = { 
+                ...productWithoutCustomFields, 
+                price: Rent, // Assign Rent to price
+              };
+  
+              // Safeguard for imageUrls
+              let imageUrlsArray = [];
+              if (imageUrls) {
+                try {
+                  imageUrlsArray = Array.isArray(imageUrls) 
+                    ? imageUrls 
+                    : imageUrls.split(',').map(url => url.trim()); // Split by comma and trim
+                } catch (error) {
+                  console.error('Error parsing imageUrls:', error);
+                }
+              }
+  
+              return { 
+                ...product, 
+                imageUrls: imageUrlsArray // Save imageUrls as an array
+              }; 
+            });
+  
+          // Check if there are products to save
+          if (importedProducts.length === 0) {
+            console.warn('No products to import.');
+            return;
+          }
+  
+          // Loop through each product and save to Firestore using productCode as the document ID
+          await Promise.all(importedProducts.map(async (product) => {
+            try {
+              // Ensure productCode is defined
+              if (!product.productCode) {
+                console.error('Product code is missing:', product);
+                return; // Skip saving this product
+              }
+  
+              const productRef = doc(db, 'products', product.productCode); // Create a reference using productCode
+              await setDoc(productRef, product); // Set the document with product data
+              console.log('Product saved successfully:', product);
+            } catch (error) {
+              console.error('Error saving product to Firestore:', error, product);
+            }
+          }));
+  
+          setImportedData(importedProducts); // Store the imported products locally if needed
+          console.log('Imported products:', importedProducts);
+        },
+        error: (error) => {
+          console.error('Error parsing CSV:', error);
+        }
+      });
+    }
+  };
+  
  
 
  const handlecopy = (product) => {
