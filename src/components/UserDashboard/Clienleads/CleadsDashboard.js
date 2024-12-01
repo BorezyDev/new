@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { FaSearch, FaFilter, FaDownload,  FaCopy, FaPlus, FaEdit, FaTrash} from 'react-icons/fa';
+import { FaSearch, FaFilter, FaDownload,  FaCopy, FaPlus, FaEdit, FaTrash, FaUpload} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse'; // Import PapaParse for CSV operations
 import './CleadsDash.css';
@@ -153,7 +153,7 @@ const ClientLeadsDashboard = () => {
 
           <div className="action-buttons">
           <label className="export-button" onClick={exportToCSV}>
-          <FaDownload />
+          <FaUpload />
               Export
               
             </label>

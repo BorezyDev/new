@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, deleteDoc, doc ,where, query } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { FaSearch, FaDownload, FaEdit, FaTrash ,FaPlus} from "react-icons/fa";
+import { FaSearch, FaDownload, FaEdit, FaTrash ,FaPlus, FaUpload} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse"; // Import PapaParse for CSV operations
 import CSidebar from "../UserDashboard/UserSidebar"; // Import the Sidebar component
@@ -122,7 +122,7 @@ const TemplatesDashboard = () => {
 
           <div className="action-buttons">
             <label className="export-button" onClick={exportToCSV}>
-              <FaDownload /> Export
+              <FaUpload /> Export
             </label>
             <label className="add-product-button" onClick={() => navigate("/addtemplate")}>
               <FaPlus /> Add Template

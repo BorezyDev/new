@@ -534,10 +534,10 @@ const handleContactNumberClick = (booking) => {
           
             <div className='action-buttons'>
             <label className="export-button" onClick={exportToCSV}>
-              <FaDownload /> Export
+              <FaUpload /> Export
             </label>
             <label htmlFor="import" className="import-button">
-              <FaUpload /> Import
+              <FaDownload /> Import
               <input
                 id="file"
                 type="file"
