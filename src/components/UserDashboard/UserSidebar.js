@@ -57,11 +57,7 @@ const UserSidebar = ({ isOpen }) => {
               <FaGift style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Product
             </Link>
           </li>
-          <li className={`sidebar-link ${location.pathname === '/templates-dashboard' ? 'active' : ''}`}>
-            <Link to="/templates-dashboard" style={{ display: 'flex', alignItems: 'center' }}>
-              <FaGift style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Create Template
-            </Link>
-          </li>
+       
           {userData?.role !== 'Subuser' && (
           <li className={`sidebar-link ${location.pathname === '/report' ? 'active' : ''}`}>
             <Link to="/report" style={{ display: 'flex', alignItems: 'center' }}>
@@ -69,8 +65,8 @@ const UserSidebar = ({ isOpen }) => {
             </Link>
           </li>
           )}
-          <li className={`sidebar-link ${location.pathname===''}`}>
-            < Link onClick={handleLogout} style={{ display: 'flex', alignItems: 'center' }}>
+          <li className={`sidebar-link ${location.pathname==='/logout'}`}>
+            < Link to="/logout" style={{ display: 'flex', alignItems: 'center' }}>
             <FaSignOutAlt style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Logout
             </Link>
           </li>

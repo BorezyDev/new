@@ -46,6 +46,7 @@ import EditCLead from './components/UserDashboard/Clienleads/Editlead';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ProductReport from './components/UserDashboard/productreport';
 import BookingDetailsPage from './components/UserDashboard/Availability/BookingDetailsPage';
+import Logout from './components/Auth/Logout';
 
 const App = () => (
  
@@ -65,6 +66,12 @@ const App = () => (
         <Route path="/change-password" element={
           <PrivateRoute>
             <ChangePassword />
+          </PrivateRoute>
+        } />
+
+        <Route path="/Logout" element={
+          <PrivateRoute>
+            <Logout />
           </PrivateRoute>
         } />
 
