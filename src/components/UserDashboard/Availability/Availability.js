@@ -536,7 +536,7 @@ const handleContactNumberClick = (booking) => {
             <label className="export-button" onClick={exportToCSV}>
               <FaUpload /> Export
             </label>
-            <label htmlFor="import" className="import-button">
+            {/* <label htmlFor="import" className="import-button">
               <FaDownload /> Import
               <input
                 id="file"
@@ -545,7 +545,7 @@ const handleContactNumberClick = (booking) => {
                 onChange={handleImport}
                 style={{ display: 'none' }}
               />
-            </label>
+            </label> */}
             <label className="add-product-button" onClick={handleAddBooking}>
               <FaPlus /> Add Booking
             </label>

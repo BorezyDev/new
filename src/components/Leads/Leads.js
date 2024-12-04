@@ -214,12 +214,12 @@ const Leads = () => {
           </div>
           <div className="action-buttons">
           <label className="export-button" onClick={exportToCSV}>
-          <FaDownload />
+          <FaUpload />
               Export
               
             </label>
             <label htmlFor="import" className="import-button">
-            <FaUpload />
+            <FaDownload />
               Import
               <input
                 type="file"

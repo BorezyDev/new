@@ -78,7 +78,7 @@ const EditBranch = () => {
   return (
     <div className="create-branch">
       <h2>Edit Branch</h2>
-      <button onClick={testToast}>Show Test Toast</button>
+      
       <form onSubmit={handleUpdateBranch}>
         {/* Email ID and Password */}
         <div className="field-row">
