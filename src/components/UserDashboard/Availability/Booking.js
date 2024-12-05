@@ -1135,7 +1135,7 @@ useEffect(() => {
               required
             >
               <option value="" disabled>Select customer by</option>
-              <option value="manager" >{userData.name}</option>
+              <option value="manager" >manager</option>
               {subUsers.map((subuser) => (
                 <option key={subuser.id} value={subuser.name}>
                   {subuser.name}
@@ -1151,7 +1151,7 @@ useEffect(() => {
               required
             >
               <option value="" disabled>Select receipt by</option>
-              <option value="manager" >{userData.name}</option>
+              <option value="manager" >manager</option>
               {subUsers.map((subuser) => (
                 <option key={subuser.id} value={subuser.name}>
                   {subuser.name}

@@ -8,7 +8,7 @@ import './CleadsDash.css';
 import CSidebar from '../../UserDashboard/UserSidebar'; // Import the Sidebar component
 import ClientHeader from '../../UserDashboard/UserHeader'; // Import the Header component
 import { useUser } from '../../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
-
+import CRightSidebar from './rsidebar';
 const ClientLeadsDashboard = () => {
   const [leads, setLeads] = useState([]);
   const [totalLeads, setTotalLeads] = useState(0); // State to keep track of total leads
@@ -19,6 +19,9 @@ const ClientLeadsDashboard = () => {
   const [originalLeads, setOriginalLeads] = useState([]);
   const navigate = useNavigate();
   const { userData } = useUser(); // Access userData from the context
+  const [selectedLead, setSelectedLead] = useState(null);
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -60,7 +63,10 @@ const ClientLeadsDashboard = () => {
   const handleEdit = (id) => {
     navigate(`/editclientlead/${id}`);
   };
-
+  const handleOpenSidebar = (lead) => {
+    setSelectedLead(lead);
+    setIsSidebarOpen(true);
+  };
 
 
   const handlecopy = (lead) => {
@@ -188,7 +194,7 @@ const ClientLeadsDashboard = () => {
               <tbody>
                 {leads.map((lead) => (
                   <tr key={lead.id}>
-                    <td>{lead.leadName}</td>
+                    <td onClick={() => handleOpenSidebar(lead)}>{lead.leadName}</td>
                     <td>{lead.mobileNo}</td>
                     <td>{lead.email}</td>
                     <td>{lead.eventDate ? lead.eventDate.toLocaleString() : 'N/A'}</td>
@@ -218,10 +224,13 @@ const ClientLeadsDashboard = () => {
           )}
         </div>
       </div>
+      <CRightSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        selectedLead={selectedLead}
+      />
     </div>
   );
 };
 
 export default ClientLeadsDashboard;
-
-

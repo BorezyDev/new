@@ -20,8 +20,7 @@ function EditProduct() {
   const [minimumRentalPeriod, setMinimumRentalPeriod] = useState(1);
   const [priceType, setPriceType] = useState('');
   const [extraRent, setExtraRent] = useState(1);
-  const [images, setImages] = useState([]);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [images, setImages] = useState([]); // Handles both new and existing images
   const [branchCode, setBranchCode] = useState('');
   const [customFieldValues, setCustomFieldValues] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -50,11 +49,13 @@ function EditProduct() {
         setMinimumRentalPeriod(productData.minimumRentalPeriod);
         setExtraRent(productData.extraRent);
         setPriceType(productData.priceType);
-       
-        // Set image previews if available
+
+        // Load existing images as preview
         if (productData.imageUrls) {
-          setImages(productData.imageUrls);
-          setImagePreview(productData.imageUrls[0]); // Set first image as preview
+          const existingImages = productData.imageUrls.map((url) => ({
+            preview: url,
+          }));
+          setImages(existingImages);
         }
         setCustomFieldValues(productData.customFields || {});
       }
@@ -65,13 +66,15 @@ function EditProduct() {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+
     if (files.length > 0) {
-      setImages(files);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagePreview(event.target.result);
-      };
-      reader.readAsDataURL(files[0]);
+      const newImages = files.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file), // Create local preview for new images
+      }));
+
+      // Add new images without removing existing image URLs
+      setImages((prevImages) => [...prevImages, ...newImages]);
     }
   };
 
@@ -83,21 +86,24 @@ function EditProduct() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    // Check for required fields
-   
-  
+
     try {
       const storage = getStorage();
-      const imageUrls = [];
-  
+      const uploadedImageUrls = [];
+
+      // Upload new files to Firebase Storage
       for (const image of images) {
-        const storageRef = ref(storage, `products/${image.name}`);
-        await uploadBytes(storageRef, image);
-        const imageUrl = await getDownloadURL(storageRef);
-        imageUrls.push(imageUrl);
+        if (image.file) {
+          const storageRef = ref(storage, `products/${image.file.name}`);
+          await uploadBytes(storageRef, image.file);
+          const imageUrl = await getDownloadURL(storageRef);
+          uploadedImageUrls.push(imageUrl);
+        } else {
+          // If it's an existing image URL, retain it
+          uploadedImageUrls.push(image.preview);
+        }
       }
-  
+
       const productData = {
         productName,
         productCode,
@@ -106,19 +112,17 @@ function EditProduct() {
         price: parseFloat(price),
         deposit: parseFloat(deposit),
         description,
-        imageUrls,
+        imageUrls: uploadedImageUrls, // Include both existing and new images
         branchCode,
         customFields: customFieldValues,
-        
         priceType,
-        extraRent: parseInt(extraRent, 10), // Provide default gender if not selected
+        extraRent: parseInt(extraRent, 10),
         minimumRentalPeriod: parseInt(minimumRentalPeriod, 10),
-
       };
-  
+
       const productRef = doc(db, 'products', productCode);
       await setDoc(productRef, productData);
-  
+
       alert('Product updated successfully!');
       navigate('/productdashboard');
     } catch (error) {
@@ -126,108 +130,116 @@ function EditProduct() {
       alert('Failed to update product');
     }
   };
-  
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-
-
   return (
-      <div className={`add-product-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
+    <div className={`add-product-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <UserSidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
-        <div className="add-product-name">
-          <UserHeader onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-          <h2 style={{ marginLeft: '20px', marginTop: '70px' }}>
-            Edit Product
-          </h2>
+      <div className="add-product-name">
+        <UserHeader onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
+        <h2 style={{ marginLeft: '20px', marginTop: '70px' }}>Edit Product</h2>
 
-      <form className="product-form" onSubmit={handleSubmit}>
-        <div className="general-info">
-          <div className='left'>
-            <label className='pd'>Product Details</label>
-            <label>Product Name</label>
-            <input value={productName} onChange={(e) => setProductName(e.target.value)} required />
+        <form className="product-form" onSubmit={handleSubmit}>
+          <div className="general-info">
+            <div className="left">
+              <label className="pd">Product Details</label>
+              <label>Product Name</label>
+              <input value={productName} onChange={(e) => setProductName(e.target.value)} required />
 
-            <label>Product Code</label>
-            <input value={productCode} readOnly required /> {/* Product Code should not be editable */}
+              <label>Product Code</label>
+              <input value={productCode} readOnly required /> {/* Product Code should not be editable */}
 
-            <label>Quantity</label>
-            <input value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+              <label>Quantity</label>
+              <input value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
 
-            <label>Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-
-            
+              <label>Description</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
           </div>
-        </div>
-        <div className='right'>
-          <label>Upload Images</label>
-          <div
-            className="image-upload-box"
-            onClick={handleImageClick}
-            style={{
-              backgroundImage: imagePreview ? `url(${imagePreview})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              border: imagePreview ? 'none' : '1px dashed gray',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '200px',
-            }}
-          >
-            {!imagePreview && (
-              <span style={{ fontSize: '24px', color: '#999' }}>
+
+          <div className="right">
+            <label>Upload Images</label>
+            <div className="image-upload-box" onClick={handleImageClick}>
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  style={{
+                    backgroundImage: `url(${image.preview})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    width: '100px',
+                    height: '100px',
+                    margin: '5px',
+                  }}
+                />
+              ))}
+              <span style={{ fontSize: '24px', color: '#999', }}>
                 <FaPlus />
               </span>
-            )}
+            </div>
+            <input
+              type="file"
+              multiple
+              onChange={handleImageChange}
+              ref={imageInputRef}
+              style={{ display: 'none' }} // Hide file input
+            />
           </div>
-          <input
-            type="file"
-            multiple
-            onChange={handleImageChange}
-            ref={imageInputRef}
-            style={{ display: 'none' }} // Hide file input
-          />
-        </div>
 
-        <div className="pricing">
-          <div className='bottom-left'>
-            <label>Base Rent</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
-            <label>Deposit</label>
-            <input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} required />
-            <label>Rent Calculated By</label>
-            <select value={priceType} onChange={(e) => setPriceType(e.target.value)}>
-              <option value="hourly">Hourly</option>
-              <option value="daily">Daily</option>
-            </select>
-            <label>Minimum Rental Period</label>
-            <input type="number" value={minimumRentalPeriod} onChange={(e) => setMinimumRentalPeriod(e.target.value)} />
-            <label>Add-On Charges</label>
-            <div className="extra-rent-group">
+          <div className="pricing">
+            <div className="bottom-left">
+              <label>Base Rent</label>
               <input
                 type="number"
-                value={extraRent}
-                onChange={(e) => setExtraRent(e.target.value)}
-                
-                style={{ width: '90%' }}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
               />
+              <label>Deposit</label>
+              <input
+                type="number"
+                value={deposit}
+                onChange={(e) => setDeposit(e.target.value)}
+                required
+              />
+              <label>Rent Calculated By</label>
+              <select
+                value={priceType}
+                onChange={(e) => setPriceType(e.target.value)}
+              >
+                <option value="hourly">Hourly</option>
+                <option value="daily">Daily</option>
+              </select>
+              <label>Minimum Rental Period</label>
+              <input
+                type="number"
+                value={minimumRentalPeriod}
+                onChange={(e) => setMinimumRentalPeriod(e.target.value)}
+              />
+              <label>Add-On Charges</label>
+              <div className="extra-rent-group">
+                <input
+                  type="number"
+                  value={extraRent}
+                  onChange={(e) => setExtraRent(e.target.value)}
+                  style={{ width: '90%' }}
+                />
               </div>
+            </div>
           </div>
-        </div>
 
-        <div className='right1'>
-          <label>Brand Name</label>
-          <input value={brandName} onChange={(e) => setBrandName(e.target.value)}  />
-        </div>
-        <div className="submit-button5">
-          <button type="submit">Update Product</button>
-        </div>
-      </form>
-    </div>
+          <div className="right1">
+            <label>Brand Name</label>
+            <input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
+          </div>
+          <div className="submit-button5">
+            <button type="submit">Update Product</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
