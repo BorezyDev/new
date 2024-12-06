@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import './Cleads.css';
 import UserHeader from '../../UserDashboard/UserHeader';
 import UserSidebar from '../../UserDashboard/UserSidebar';
+import { useUser } from '../../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
+
 
 
 const ClientLeads = () => {
@@ -21,6 +23,13 @@ const ClientLeads = () => {
     
 
   });
+  const [branchCode, setBranchCode] = useState(''); // Store branch code
+const { userData } = useUser(); // Get user data from context
+useEffect(() => {
+  if (userData && userData.branchCode) {
+    setBranchCode(userData.branchCode);
+  }
+}, [userData]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -50,6 +59,8 @@ const ClientLeads = () => {
         source,
         stage,
         email,
+        branchCode,
+
          // Include new field
       });
 

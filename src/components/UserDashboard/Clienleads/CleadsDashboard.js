@@ -26,7 +26,11 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const q = query(collection(db, 'clientleads'));
+        const q = query(
+          collection(db, 'clientleads'),
+          where('branchCode', '==', userData.branchCode)
+        );
+
         const querySnapshot = await getDocs(q);
         const fetchedLeads = querySnapshot.docs.map((doc) => ({
           id: doc.id,
