@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, orderBy, updateDoc ,doc,getDoc,setDoc} from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
@@ -98,6 +99,14 @@ const BookingDashboard = () => {
             }
 
             if (returnDateStr >= todayDateStr && userDetails.stage === 'return') {
+              const today = new Date();
+              await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                'returnDate':'today',
+                returnDate: today, // Update return date to today
+              });
+              bookingData.returnDate = today; // Update locally for immediate display
+            }
+            if (returnDateStr >= todayDateStr && userDetails.stage === 'cancelled') {
               const today = new Date();
               await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
                 'returnDate':'today',
@@ -255,7 +264,24 @@ const BookingDashboard = () => {
   
 
   const exportToCSV = () => {
-    const csv = Papa.unparse(bookings);
+    const processedBookings = bookings.map(booking => {
+      const productsString = booking.products
+        .map(product => `${product.productCode}:${product.quantity}`)
+        .join(', ');
+  
+      // Check if `createdAt` exists and is a Timestamp
+      const createdAtDate = booking.createdAt && booking.createdAt.toDate
+        ? booking.createdAt.toDate().toLocaleString()
+        : 'N/A'; // Use 'N/A' or another placeholder if `createdAt` is missing
+  
+      return {
+        ...booking,
+        products: productsString,
+        createdAt: createdAtDate,
+      };
+    });
+  
+    const csv = Papa.unparse(processedBookings);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     if (link.download !== undefined) {
@@ -268,6 +294,7 @@ const BookingDashboard = () => {
       document.body.removeChild(link);
     }
   };
+  
 
   const handleImport = (event) => {
     const file = event.target.files[0];
