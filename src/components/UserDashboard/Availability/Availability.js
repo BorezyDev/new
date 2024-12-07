@@ -509,6 +509,14 @@ const handleContactNumberClick = (booking) => {
   setSelectedBooking(booking);
   setIsModalOpen(true);
 };
+const stageCounts = filteredBookings.reduce((counts, booking) => {
+  counts[booking.stage] = (counts[booking.stage] || 0) + 1;
+  return counts;
+}, {});
+
+// Include "all" count for all bookings
+const totalBookingsCount = filteredBookings.length;
+
   return (
     <div className={`dashboard-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <UserSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
@@ -518,15 +526,15 @@ const handleContactNumberClick = (booking) => {
           Total Bookings
         </h2>
         <div className="filter-container">
-          <button onClick={() => setStageFilter('all')}>All</button>
-          <button onClick={() => setStageFilter('Booking')}>Booking </button>
-          <button onClick={() => setStageFilter('pickupPending')}>Pickup Pending</button>
-          <button onClick={() => setStageFilter('pickup')}>Picked Up</button>
-          <button onClick={() => setStageFilter('returnPending')}>Return Pending</button>
-          <button onClick={() => setStageFilter('return')}>Returned</button>
-          <button onClick={() => setStageFilter('successful')}>Successful</button>
-          <button onClick={() => setStageFilter('cancelled')}>Cancelled</button>
-          <button onClick={() => setStageFilter('postponed')}>Postponed / Credit note</button>
+          <button onClick={() => setStageFilter('all')}> All ({totalBookingsCount})</button>
+          <button onClick={() => setStageFilter('Booking')}>Booking ({stageCounts['Booking'] || 0}) </button>
+          <button onClick={() => setStageFilter('pickupPending')}> Pickup Pending ({stageCounts['pickupPending'] || 0})</button>
+          <button onClick={() => setStageFilter('pickup')}>Picked Up ({stageCounts['pickup'] || 0})</button>
+          <button onClick={() => setStageFilter('returnPending')}>Return Pending ({stageCounts['returnPending'] || 0})</button>
+          <button onClick={() => setStageFilter('return')}>Returned  ({stageCounts['return'] || 0})</button>
+          <button onClick={() => setStageFilter('successful')}>Successful ({stageCounts['successful'] || 0})</button>
+          <button onClick={() => setStageFilter('cancelled')}>Cancelled ({stageCounts['cancelled'] || 0})</button>
+          <button onClick={() => setStageFilter('postponed')}>Postponed / Credit note ({stageCounts['postponed'] || 0})</button>
         </div>
 
         <div className="toolbar-container">
