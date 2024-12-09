@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -197,7 +198,7 @@ const AdminDashboard = () => {
       <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       <div className="dashboard-content">
         <Header onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-        <h2 style={{ marginLeft: '10px', marginTop: '80px' }}>
+        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>
           {filterTitleMap[location.pathname.split('/').pop()] || 'All Branches'} ({filteredBranches.length})
         </h2>
         <div className="toolbar-container">
