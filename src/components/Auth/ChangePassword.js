@@ -4,6 +4,7 @@ import { getAuth, reauthenticateWithCredential, EmailAuthProvider, updatePasswor
 import { useNavigate } from 'react-router-dom';
 import { TextField, Button } from '@mui/material';
 import './changePassword.css'; // Import the CSS
+import backIcon from '../../assets/icons8-back-30.png'
 
 const ChangePassword = () => {
   const [oldPassword, setOldPassword] = useState('');
@@ -46,7 +47,16 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="change-password">
+    
+    
+       <div >
+        <img
+          src={backIcon}
+          alt="button10"
+          onClick={() => navigate("/overview")} // Navigate to the profile page
+        />
+     
+      <div className="change-password">
       <h2>Change Your Password</h2>
       <form onSubmit={handleChangePassword}>
         <TextField
@@ -76,7 +86,7 @@ const ChangePassword = () => {
           required
           fullWidth
         />
-       <Button variant="contained" fullWidth onClick={() => navigate('/usersidebar/dashboard')} type="button" className='can'>Cancel</Button>
+       <Button variant="contained" fullWidth onClick={() => navigate('/overview')} type="button" className='can'>Cancel</Button>
 
         <Button type="submit" variant="contained" fullWidth>
           Change Password
@@ -85,7 +95,10 @@ const ChangePassword = () => {
         {success && <p className="success-message">{success}</p>}
       </form>
     </div>
+    </div>
   );
 };
+ 
+
 
 export default ChangePassword;

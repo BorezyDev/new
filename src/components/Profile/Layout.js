@@ -25,7 +25,7 @@ const Layout = () => {
         <img
           src={backIcon}
           alt="button10"
-          onClick={() => navigate('/dashboard')} // Navigate to the profile page
+          onClick={() => navigate(isSuperAdmin ?"/leads":"/usersidebar/dashboard")} // Navigate to the profile page
         />
       </div>
 
