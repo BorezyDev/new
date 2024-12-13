@@ -3,6 +3,8 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../../firebaseConfig'; // Firebase config import
 import './EditUser.css';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const EditUser = () => {
   const { id } = useParams();
@@ -22,12 +24,12 @@ const EditUser = () => {
           setIsActive(userData.isActive || false);
         } else {
           console.error('User not found');
-          alert('User not found. Redirecting to users list.'); // User feedback
-          navigate('/users'); // Redirect if user not found
+          toast.error('User not found. Redirecting to users list.'); // User feedback
+          setTimeout(() =>  navigate('/usersidebar/users'),5000); // Redirect if user not found
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
-        alert('Error fetching user data. Please try again.'); // User feedback
+        toast.error('Error fetching user data. Please try again.'); // User feedback
       } finally {
         setLoading(false);
       }
@@ -43,11 +45,11 @@ const EditUser = () => {
         ...user,
         isActive,
       });
-      alert('User updated successfully!'); // Show success notification
-      navigate('/users'); // Redirect back to user dashboard
+      toast.success('User updated successfully!'); // Show success notification
+      setTimeout(() => navigate('/usersidebar/users'),5000); // Redirect back to user dashboard
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Error updating user. Please try again.'); // Show error notification
+      toast.error('Error updating user. Please try again.'); // Show error notification
     }
   };
 
@@ -116,6 +118,7 @@ const EditUser = () => {
           <button onClick={handleSave}>Save</button>
         </div>
       )}
+      <ToastContainer/>
     </div>
   );
 };

@@ -183,7 +183,7 @@ const Leads = () => {
       <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       <div className="dashboard-content">
         <Header onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-        <h2 style={{ marginLeft: '10px', marginTop: '80px' }}>
+        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>
           {filterTitleMap[location.pathname.split('/').pop()] || 'Total Leads'} ({filteredLeads.length})
         </h2>
         <div className="toolbar-container">

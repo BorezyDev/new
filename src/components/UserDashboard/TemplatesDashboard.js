@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, deleteDoc, doc ,where, query } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { FaSearch, FaDownload, FaEdit, FaTrash ,FaPlus, FaUpload} from "react-icons/fa";
+import { FaSearch, FaDownload, FaEdit, FaTrash ,FaPlus} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse"; // Import PapaParse for CSV operations
 import CSidebar from "../UserDashboard/UserSidebar"; // Import the Sidebar component
 import ClientHeader from "../UserDashboard/UserHeader"; // Import the Header component
 import { useUser } from "../Auth/UserContext"; // Assuming you're using a UserContext for branchCode
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const TemplatesDashboard = () => {
   const [templates, setTemplates] = useState([]);
@@ -36,7 +38,7 @@ const TemplatesDashboard = () => {
       setOriginalTemplates(templatesData);
     } catch (error) {
       console.error("Error fetching templates:", error);
-      setMessage("Failed to load templates.");
+      toast.warn("Failed to load templates.");
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,7 @@ const TemplatesDashboard = () => {
 
           <div className="action-buttons">
             <label className="export-button" onClick={exportToCSV}>
-              <FaUpload /> Export
+              <FaDownload /> Export
             </label>
             <label className="add-product-button" onClick={() => navigate("/addtemplate")}>
               <FaPlus /> Add Template
@@ -183,6 +185,8 @@ const TemplatesDashboard = () => {
           )}
         </div>
       </div>
+
+      <ToastContainer/>
     </div>
   );
 };

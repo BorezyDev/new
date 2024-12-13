@@ -12,6 +12,9 @@ import Papa from 'papaparse';
 import './Availability.css'; // Create CSS for styling
 import { format } from 'date-fns';
 import { Label } from 'recharts';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
+
 
 
 const BookingDashboard = () => {
@@ -54,17 +57,15 @@ const BookingDashboard = () => {
           where('branchCode', '==', userData.branchCode)
         );
         const productsSnapshot = await getDocs(q);
-
+  
         let allBookings = [];
-        
-
-
+  
         for (const productDoc of productsSnapshot.docs) {
           const productCode = productDoc.data().productCode;
           const bookingsRef = collection(productDoc.ref, 'bookings');
           const bookingsQuery = query(bookingsRef, orderBy('pickupDate', 'asc'));
           const bookingsSnapshot = await getDocs(bookingsQuery);
-
+  
           for (const docSnapshot of bookingsSnapshot.docs) {
             const bookingData = docSnapshot.data();
             const {
@@ -76,83 +77,101 @@ const BookingDashboard = () => {
               userDetails,
               createdAt,
             } = bookingData;
-
-            const pickupDateStr = (pickupDate && typeof pickupDate.toDate === 'function') 
-            ? pickupDate.toDate().toDateString() 
-            : new Date(pickupDate).toDateString();
-          const returnDateStr = (returnDate && typeof returnDate.toDate === 'function') 
-            ? returnDate.toDate().toDateString() 
-            : new Date(returnDate).toDateString();
-            
+  
+            const pickupDateStr =
+              pickupDate && typeof pickupDate.toDate === 'function'
+                ? pickupDate.toDate().toDateString()
+                : new Date(pickupDate).toDateString();
+            const returnDateStr =
+              returnDate && typeof returnDate.toDate === 'function'
+                ? returnDate.toDate().toDateString()
+                : new Date(returnDate).toDateString();
+  
             // Check if pickupDate matches today's date and if stage needs to be updated
-            if (pickupDateStr === todayDateStr && userDetails.stage ==='Booking') {
-              await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
-                'userDetails.stage': 'pickupPending',
-              });
+            if (pickupDateStr === todayDateStr && userDetails.stage === 'Booking') {
+              await updateDoc(
+                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
+                {
+                  'userDetails.stage': 'pickupPending',
+                }
+              );
               userDetails.stage = 'pickupPending'; // Update locally for immediate display
             }
-            if (returnDateStr === todayDateStr && userDetails.stage ==='pickup') {
-              await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
-                'userDetails.stage': 'returnPending',
-              });
+            if (returnDateStr === todayDateStr && userDetails.stage === 'pickup') {
+              await updateDoc(
+                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
+                {
+                  'userDetails.stage': 'returnPending',
+                }
+              );
               userDetails.stage = 'returnPending'; // Update locally for immediate display
             }
-
+  
             if (returnDateStr >= todayDateStr && userDetails.stage === 'return') {
               const today = new Date();
-              await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
-                'returnDate':'today',
-                returnDate: today, // Update return date to today
-              });
+              await updateDoc(
+                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
+                {
+                  returnDate: today, // Update return date to today
+                }
+              );
               bookingData.returnDate = today; // Update locally for immediate display
             }
             if (returnDateStr >= todayDateStr && userDetails.stage === 'cancelled') {
               const today = new Date();
-              await updateDoc(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
-                'returnDate':'today',
-                returnDate: today, // Update return date to today
-              });
+              await updateDoc(
+                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
+                {
+                  returnDate: today, // Update return date to today
+                }
+              );
               bookingData.returnDate = today; // Update locally for immediate display
             }
-            
-
+  
             allBookings.push({
               bookingId,
               receiptNumber,
               clientname: userDetails.name,
               contactNo: userDetails.contact,
               email: userDetails.email,
-              pickupDate: pickupDate ? (pickupDate.toDate ? pickupDate.toDate() : new Date(pickupDate)) : null,
-              returnDate: returnDate ? (returnDate.toDate ? returnDate.toDate() : new Date(returnDate)) : null,
+              pickupDate: pickupDate
+                ? pickupDate.toDate
+                  ? pickupDate.toDate()
+                  : new Date(pickupDate)
+                : null,
+              returnDate: returnDate
+                ? returnDate.toDate
+                  ? returnDate.toDate()
+                  : new Date(returnDate)
+                : null,
               createdAt: createdAt || null,
               stage: userDetails.stage,
               products: [{ productCode, quantity: parseInt(quantity, 10) }],
-              IdentityProof:userDetails.identityproof || 'N/A',
-              IdentityNumber:userDetails.identitynumber || 'N/A',
-              Source:userDetails.source || 'N/A',
-              CustomerBy:userDetails.customerby || 'N/A',
-              ReceiptBy:userDetails.receiptby || 'N/A',
-              Alterations:userDetails.alterations || 'N/A',
-              SpecialNote:userDetails.specialnote || 'N/A',
-              GrandTotalRent :userDetails.grandTotalRent || 'N/A',
-              DiscountOnRent:userDetails.discountOnRent || 'N/A',
-              FinalRent:userDetails.finalrent || 'N/A',
-              GrandTotalDeposit:userDetails.grandTotalDeposit || 'N/A',
-              DiscountOnDeposit:userDetails.discountOnDeposit || 'N/A',
-              FinalDeposit:userDetails.finaldeposite || 'N/A',
-              AmountToBePaid:userDetails.totalamounttobepaid || 'N/A',
-              AmountPaid:userDetails.amountpaid || 'N/A',
-              Balance:userDetails.balance || 'N/A',
-              PaymentStatus:userDetails.paymentstatus || 'N/A',
-              FirstPaymentDetails:userDetails.firstpaymentdtails || 'N/A',
-              FirstPaymentMode:userDetails.firstpaymentmode || 'N/A',
-              SecondPaymentMode:userDetails.secondpaymentmode || 'N/A',
-              SecondPaymentDetails:userDetails.secondpaymentdetails || 'N/A',
-              
-            })
+              IdentityProof: userDetails.identityproof || 'N/A',
+              IdentityNumber: userDetails.identitynumber || 'N/A',
+              Source: userDetails.source || 'N/A',
+              CustomerBy: userDetails.customerby || 'N/A',
+              ReceiptBy: userDetails.receiptby || 'N/A',
+              Alterations: userDetails.alterations || 'N/A',
+              SpecialNote: userDetails.specialnote || 'N/A',
+              GrandTotalRent: userDetails.grandTotalRent || 'N/A',
+              DiscountOnRent: userDetails.discountOnRent || 'N/A',
+              FinalRent: userDetails.finalrent || 'N/A',
+              GrandTotalDeposit: userDetails.grandTotalDeposit || 'N/A',
+              DiscountOnDeposit: userDetails.discountOnDeposit || 'N/A',
+              FinalDeposit: userDetails.finaldeposite || 'N/A',
+              AmountToBePaid: userDetails.totalamounttobepaid || 'N/A',
+              AmountPaid: userDetails.amountpaid || 'N/A',
+              Balance: userDetails.balance || 'N/A',
+              PaymentStatus: userDetails.paymentstatus || 'N/A',
+              FirstPaymentDetails: userDetails.firstpaymentdtails || 'N/A',
+              FirstPaymentMode: userDetails.firstpaymentmode || 'N/A',
+              SecondPaymentMode: userDetails.secondpaymentmode || 'N/A',
+              SecondPaymentDetails: userDetails.secondpaymentdetails || 'N/A',
+            });
           }
         }
-
+  
         // Group bookings by receiptNumber
         const groupedBookings = allBookings.reduce((acc, booking) => {
           const { receiptNumber, products } = booking;
@@ -163,26 +182,40 @@ const BookingDashboard = () => {
           }
           return acc;
         }, {});
-
+  
         // Convert grouped bookings object to array
-        setBookings(Object.values(groupedBookings));
+        let bookingsArray = Object.values(groupedBookings);
+  
+        // Sort bookings by `createdAt` in descending order
+        bookingsArray.sort((a, b) => {
+          const dateA = a.createdAt
+            ? new Date(a.createdAt.toDate ? a.createdAt.toDate() : a.createdAt)
+            : new Date(0);
+          const dateB = b.createdAt
+            ? new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt)
+            : new Date(0);
+          return dateB - dateA; // Latest first
+        });
+  
+        setBookings(bookingsArray); // Update state with sorted bookings
       } catch (error) {
-        console.error('Error fetching bookings:', error);
+        toast.error('Error fetching bookings:', error);
       } finally {
         setLoading(false); // End loading
       }
     };
-
+  
     fetchAllBookingsWithUserDetails();
   }, [userData.branchCode]);
+  
  
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this booking?")) {
+    if (window.toast.confirm("Are you sure you want to delete this booking?")) {
       try {
         // Add your delete logic here
       } catch (error) {
-        console.error('Error deleting booking:', error);
+        toast.error('Error deleting booking:', error);
       }
     }
   };
@@ -305,29 +338,29 @@ const BookingDashboard = () => {
           const importedBookings = result.data.filter(row => row && Object.keys(row).length > 0);
           
           if (importedBookings.length === 0) {
-            console.warn('No bookings to import.');
+            toast.warn('No bookings to import.');
             return;
           }
 
           await Promise.all(importedBookings.map(async (booking) => {
             try {
               if (!booking.bookingCode) {
-                console.error('Booking code is missing:', booking);
+                toast.error('Booking code is missing:', booking);
                 return;
               }
 
               const bookingRef = doc(db, 'bookings', booking.bookingCode);
               await setDoc(bookingRef, booking);
-              console.log('Booking saved successfully:', booking);
+              toast.log('Booking saved successfully:', booking);
             } catch (error) {
-              console.error('Error saving booking to Firestore:', error, booking);
+              toast.error('Error saving booking to Firestore:', error, booking);
             }
           }));
 
           setImportedData(importedBookings); // Store the imported bookings locally if needed
         },
         error: (error) => {
-          console.error('Error parsing CSV:', error);
+          toast.error('Error parsing CSV:', error);
         }
       });
     }
@@ -352,7 +385,7 @@ const BookingDashboard = () => {
         );
 
         if (!bookingToUpdate) {
-            console.error('Booking not found');
+            toast.error('Booking not found');
             return;
         }
 
@@ -374,7 +407,7 @@ const BookingDashboard = () => {
 
             // Check if any documents were found
             if (querySnapshot.empty) {
-                console.error('No documents found for bookingId:', bookingId);
+                toast.error('No documents found for bookingId:', bookingId);
                 // Create a new document if needed
                 const bookingDocRef = doc(bookingsRef, bookingId);
                 await setDoc(bookingDocRef, {
@@ -385,14 +418,14 @@ const BookingDashboard = () => {
                     // Include other relevant fields from bookingToUpdate if needed
                 });
 
-                console.log('Document created successfully for product:', productCode, 'at path:', bookingDocRef.path);
+                toast.log('Document created successfully for product:', productCode, 'at path:', bookingDocRef.path);
             } else {
                 // Reference to the specific booking document inside Firestore
                 const bookingDocRef = querySnapshot.docs[0].ref;
 
                 // Update the booking stage in Firestore
                 await updateDoc(bookingDocRef, { 'userDetails.stage': newStage });
-                console.log('Stage updated successfully for product:', productCode);
+                toast.log('Stage updated successfully for product:', productCode);
             }
         }
 
@@ -405,7 +438,7 @@ const BookingDashboard = () => {
             )
         );
     } catch (error) {
-        console.error('Error updating booking stage:', error);
+        toast.error('Error updating booking stage:', error);
     }
 };
 
@@ -425,7 +458,7 @@ useEffect(() => {
       }));
       setTemplates(templatesList);
     } catch (error) {
-      console.error("Error fetching templates:", error);
+      toast.error("Error fetching templates:", error);
     }
   };
 
@@ -440,7 +473,7 @@ useEffect(() => {
 // Function to send WhatsApp message
 const sendWhatsAppMessage = (contactNo, message) => {
   if (!contactNo) {
-    console.error("No contact number provided!");
+    toast.error("No contact number provided!");
     return;
   }
 
@@ -457,7 +490,7 @@ const sendWhatsAppMessage = (contactNo, message) => {
 // Handle template click and send WhatsApp message
 const handleTemplateClick = (template) => {
   if (!selectedBooking) {
-    console.error("No booking selected!");
+    toast.error("No booking selected!");
     return;
   }
 
@@ -759,7 +792,7 @@ const totalBookingsCount = filteredBookings.length;
           </div>
         )}
       </div>
-      
+      <ToastContainer />
     </div>
   );
 };

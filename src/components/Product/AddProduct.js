@@ -6,6 +6,8 @@ import { db } from '../../firebaseConfig'; // Assuming you have Firebase initial
 import { useUser } from '../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
 import '../Product/Addproduct.css';
 import { FaPlus} from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 import UserHeader from '../UserDashboard/UserHeader';
 import UserSidebar from '../UserDashboard/UserSidebar';
@@ -133,8 +135,9 @@ function AddProduct() {
       // Add an empty bookings sub-collection
       await addDoc(collection(productRef, 'bookings'), {}); // Empty document with bookingId as ID
 
-      alert('Product  added successfully!');
-      navigate('/productdashboard');
+      toast.success('Product  added successfully!');
+
+      setTimeout(() => navigate('/productdashboard'),5000);
       
       // Reset form
       setProductName('');
@@ -151,7 +154,7 @@ function AddProduct() {
 
     } catch (error) {
       console.error("Error adding product: ", error);
-      alert('Error adding product. Please try again.');
+      toast('Error adding product. Please try again.');
     }
   };
 
@@ -270,6 +273,7 @@ function AddProduct() {
           </div>
       </form>
     </div>
+    <ToastContainer/>
     </div>
   );
 }

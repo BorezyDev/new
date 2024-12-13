@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { TextField, Button } from '@mui/material';
 import './changePassword.css'; // Import the CSS
 import backIcon from '../../assets/icons8-back-30.png'
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const ChangePassword = () => {
   const [oldPassword, setOldPassword] = useState('');
@@ -22,12 +24,12 @@ const ChangePassword = () => {
     setSuccess('');
 
     if (!user) {
-      setError('User not authenticated.');
+      toast.warn('User not authenticated.');
       return;
     }
 
     if (newPassword !== repeatPassword) {
-      setError('New passwords do not match.');
+      toast.warn('New passwords do not match.');
       return;
     }
 
@@ -38,11 +40,11 @@ const ChangePassword = () => {
       
       // Update the password
       await updatePassword(user, newPassword);
-      setSuccess('Password updated successfully.');
-      navigate('/welcome'); // Redirect to the Welcome page or any other page after password change
+      toast.success('Password updated successfully.');
+      setTimeout(() => navigate('/welcome'),5000); // Redirect to the Welcome page or any other page after password change
     } catch (error) {
       console.error('Error updating password:', error);
-      setError('Failed to update password. Please try again.');
+      toast.error('Failed to update password. Please try again.');
     }
   };
 
@@ -95,6 +97,7 @@ const ChangePassword = () => {
         {success && <p className="success-message">{success}</p>}
       </form>
     </div>
+    <ToastContainer/>
     </div>
   );
 };

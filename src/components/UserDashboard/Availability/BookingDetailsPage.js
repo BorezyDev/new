@@ -4,6 +4,8 @@ import { collection, query, where, getDocs, updateDoc, doc,arrayUnion } from 'fi
 import { db } from '../../../firebaseConfig';
 import './BookingDetailsPage.css';
 import { useUser } from '../../Auth/UserContext';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 
 const formatTimestamp = (timestamp) => {
@@ -70,7 +72,7 @@ const BookingDetailsPage = () => {
 
         setBookings(allBookings);
       } catch (error) {
-        console.error('Error fetching booking or product details:', error);
+        toast.error('Error fetching booking or product details:', error);
       } finally {
         setLoading(false);
       }
@@ -137,7 +139,7 @@ const BookingDetailsPage = () => {
       const updateDetails = changes
   .map(
     (change) =>
-      `${change.field} \n  updated from "${change.previous}" \n  to "${change.updated}" \n  by "${change.updatedby}"\n`
+      `${change.field}   updated from "${change.previous}"   to "${change.updated}"   by "${change.updatedby}"\n`
   )
   .join('\n\n'); // Add extra spacing between changes for readability
 
@@ -157,7 +159,7 @@ const newLogEntry = {
         activityLog: arrayUnion(newLogEntry),
       });
   
-      alert('Details Updated Successfully');
+      toast.success('Details Updated Successfully');
       setIsEditingSecondPayment(false);
     } catch (error) {
       console.error('Error updating second payment details:', error);
@@ -178,6 +180,8 @@ const newLogEntry = {
     <>
       <div className="booking-details-container">
         {/* Activity Log Section at the Top Right */}
+        <button onClick={() => navigate('/usersidebar/clients')} type="button" className='can'>Back</button>
+
         <div className="activity-log-container">
     <h3>Activity Log</h3>
     {bookings.map((booking, index) => (
@@ -202,7 +206,10 @@ const newLogEntry = {
 
         {/* Main Content Section */}
         <div className="main-content">
-        <button onClick={() => navigate('/usersidebar/clients')} type="button" className='can'>Back</button>
+        <button onClick={() => window.print()} className="print-button">
+          Print
+        </button>
+
 
           <h2>Booking Details for Receipt Number: {receiptNumber}</h2>
           <div className="personal-info">
@@ -384,6 +391,7 @@ const newLogEntry = {
           </div>
         </div>
       </div>
+      <ToastContainer/>
     </>
   );
 };

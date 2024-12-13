@@ -10,6 +10,8 @@ import searchIcon from '../../assets/Search.png';
 import { FaSearch, FaFilter, FaDownload, FaUpload, FaPlus, FaEdit, FaTrash, FaCopy } from 'react-icons/fa';
 import { useUser } from '../Auth/UserContext';
 import ProductDetailSidebar from './ProductDetailSidebar';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const ProductDashboard = () => {
   const [products, setProducts] = useState([]);
@@ -50,7 +52,7 @@ const ProductDashboard = () => {
         setTotalProducts(fetchedProducts.length);
         setCustomFields([...allCustomFields]);
       } catch (error) {
-        console.error('Error fetching products data:', error);
+        toast.error('Error fetching products data:', error);
       } finally {
         setLoading(false);
       }
@@ -65,7 +67,7 @@ const ProductDashboard = () => {
       setProducts(products.filter((product) => product.id !== id));
       setTotalProducts(totalProducts - 1);
     } catch (error) {
-      console.error('Error deleting product:', error);
+      toast.error('Error deleting product:', error);
     }
   };
 
@@ -202,7 +204,7 @@ const ProductDashboard = () => {
   
           // Check if there are products to save
           if (importedProducts.length === 0) {
-            console.warn('No products to import.');
+            toast.warn('No products to import.');
             return;
           }
   
@@ -254,7 +256,7 @@ const ProductDashboard = () => {
   navigator.clipboard.writeText(formattedText.trim());
 
   // Display a confirmation alert
-  alert("Product details copied to clipboard:\n" );
+  toast.success("Product details copied to clipboard:\n" );
 };
   
   
@@ -354,7 +356,7 @@ const ProductDashboard = () => {
                       )}
                     </td>
                     <td>{product.productName}</td>
-                    <td onClick={() => handleProductCodeClick(product)} style={{ cursor: 'pointer' }} className="clickable">
+                    <td>
                       {product.productCode}
                     </td>
 

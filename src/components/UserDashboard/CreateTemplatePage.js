@@ -3,6 +3,8 @@ import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 import { useUser } from '../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const CreateTemplate = () => {
   const [templateName, setTemplateName] = useState("");
@@ -53,7 +55,7 @@ const CreateTemplate = () => {
     e.preventDefault();
 
     if (!templateName || !templateBody) {
-      setMessage("Both fields are required!");
+      toast.warn("Both fields are required!");
       return;
     }
 
@@ -64,13 +66,14 @@ const CreateTemplate = () => {
         createdAt: new Date(),
         branchCode:branchCode,
       });
-      setMessage("Template created successfully!");
+      toast.success("Template created successfully!");
       setTemplateName("");
       setTemplateBody("");
-      navigate("/templates-dashboard");
+
+      setTimeout(() =>navigate("/templates-dashboard"),5000);
     } catch (error) {
       console.error("Error creating template:", error);
-      setMessage("Failed to create template.");
+      toast.error("Failed to create template.");
     }
   };
 
@@ -168,6 +171,7 @@ const CreateTemplate = () => {
           }}>Cancel</button>
 
       </form>
+      <ToastContainer/>
     </div>
   );
 };

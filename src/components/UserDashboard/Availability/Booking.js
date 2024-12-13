@@ -6,6 +6,8 @@ import { Await, useNavigate } from 'react-router-dom';
 import UserHeader from '../../UserDashboard/UserHeader';
 import UserSidebar from '../../UserDashboard/UserSidebar';
 import { useUser } from '../../Auth/UserContext';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 import { FaSearch, FaDownload, FaUpload, FaPlus, FaEdit, FaTrash, FaCopy } from 'react-icons/fa';
 import "../Availability/Booking.css"
@@ -130,10 +132,10 @@ const handleDiscountChange = (e) => {
             return newProducts;
           });
         } else {
-          console.log('Product does not belong to this branch.');
+          toast.error('Product does not belong to this branch.');
         }
       } else {
-        console.log('Product not found in Firestore.');
+        console.error('Product not found in Firestore.');
       }
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -187,14 +189,14 @@ const handleDiscountChange = (e) => {
   
       // Check if selected pickupDate is in the past
       if (selectedDate < today) {
-        alert('Pickup date cannot be in the past.');
+        toast.warn('Pickup date cannot be in the past.');
         return;
       }
   
       // Check if pickupDate is greater than returnDate
       const returnDate = new Date(newProducts[index].returnDate);
       if (returnDate && selectedDate > returnDate) {
-        alert('Pickup date cannot be later than return date.');
+        toast.warn('Pickup date cannot be later than return date.');
         return;
       }
     }
@@ -206,7 +208,7 @@ const handleDiscountChange = (e) => {
   
       // Check if returnDate is earlier than pickupDate
       if (pickupDate && selectedDate < pickupDate) {
-        alert('Return date cannot be earlier than pickup date.');
+        toast.warn('Return date cannot be earlier than pickup date.');
         return;
       }
     }
@@ -258,7 +260,7 @@ const handleDiscountChange = (e) => {
         const newProducts = [...products];
         newProducts[index].errorMessage = 'Product not found.';
         setProducts(newProducts);
-        console.log('Product not found:', productCode);
+        toast.error('Product not found:', productCode);
         return;
       }
   
@@ -371,7 +373,7 @@ const handleDiscountChange = (e) => {
       setProducts(newProducts);
   
     } catch (error) {
-      console.error('Error checking availability:', error);
+      toast.error('Error checking availability:', error);
       const newProducts = [...products];
       newProducts[index].errorMessage = 'Failed to check availability. Please try again.';
       setProducts(newProducts);
@@ -449,7 +451,7 @@ const handleDiscountChange = (e) => {
       // Return the new booking ID for the current product
       return newBookingId;
     } catch (error) {
-      console.error('Error getting next booking ID:', error);
+      toast.error('Error getting next booking ID:', error);
       setErrorMessage('Failed to get booking ID. Please try again.');
       return null;
     }
@@ -589,7 +591,7 @@ const handleDiscountChange = (e) => {
       });
   
     } catch (error) {
-      console.error('Error confirming booking:', error);
+      toast.error('Error confirming booking:', error);
       setErrorMessage('An error occurred while confirming your booking. Please try again.');
     }
   };
@@ -610,7 +612,7 @@ const handleDiscountChange = (e) => {
   
           if (!productDoc.exists()) {
             product.errorMessage = 'Product not found.';
-            console.log(`Product not found for code: ${product.productCode}`);
+            toast.warn(`Product not found for code: ${product.productCode}`);
             return false; // Skip this product if not found
           }
   
@@ -625,7 +627,7 @@ const handleDiscountChange = (e) => {
   
           // Check if the requested quantity is within the available stock
           if (requestedQuantity > availableQuantity) {
-            console.log(`Not enough stock for product: ${product.productCode}`);
+            toast.warning(`Not enough stock for product: ${product.productCode}`);
             product.errorMessage = 'Insufficient stock for this product.';
             return false; // Return false if not enough stock
           }
@@ -637,7 +639,7 @@ const handleDiscountChange = (e) => {
       // Check if all products have sufficient stock
       const allAvailable = allQuantitiesAvailable.every((isAvailable) => isAvailable);
       if (!allAvailable) {
-        alert('One or more products do not have enough stock. Please adjust the quantity.');
+        toast.warn('One or more products do not have enough stock. Please adjust the quantity.');
         return; // Exit the function without proceeding with booking
       }
       
@@ -759,10 +761,10 @@ const handleDiscountChange = (e) => {
       
   
       setIsPaymentConfirmed(true);
-      alert(`Bill Created Successfully. Your Receipt Number is: ${receiptNumber}`);
-      navigate('/usersidebar/clients');
+      toast.success(`Bill Created Successfully. Your Receipt Number is: ${receiptNumber}`);
+      setTimeout(() => navigate('/usersidebar/clients'), 6000); // 2 seconds delay
     } catch (error) {
-      console.error('Error confirming payment:', error);
+      toast.error('Error confirming payment:', error);
       setErrorMessage(error.message);
     }
   };
@@ -787,7 +789,7 @@ const handleDiscountChange = (e) => {
       if (allQuantitiesAvailable) {
         setIsAvailability1FormVisible(!isAvailability1FormVisible);
       } else {
-        alert('Entered quantities exceed available quantities for one or more products.');
+        toast.error('Entered quantities exceed available quantities for one or more products.');
       }
     
   };
@@ -902,7 +904,7 @@ useEffect(() => {
      
      <div>
       
-      <h8>Check Product Availability </h8>
+      <h8>Check Product  Avalibility</h8>
       {products.map((product, index) => (
         <div key={index} className="product-check" style={{ marginBottom: '20px',  padding: '10px', border: '1px solid #ddd',background:'#ffffff',}}>
           <div className="date-row" style={{  width: '700px',display:'flex',marginTop: '100px', }}>
@@ -1120,7 +1122,7 @@ useEffect(() => {
 
            <option value="friendsandfamily" >Friends And Family</option>
            <option value="repeatcustomer">Repeat Customer</option>
-           <option value="referal">Referal</option>
+           <option value="referal">Referral</option>
            <option value="walkin">Walk-In</option>
            
          </select>
@@ -1264,7 +1266,7 @@ useEffect(() => {
 
                 {isPaymentFormVisible && (
                   <div className="payment-form-container" style={{ marginTop: '80px', }} >
-                    <h3>Payment Details</h3>
+                    <div style={{  width: '260px',display:'flex',marginTop: '50px',marginLeft:'20px',fontFamily: 'Public Sans',fontStyle: 'normal',fontWeight:'500',fontSize:'22px',lineHeight:'26px',color:'#000000' }}>Payment Details</div>
                   <div className="date-row" style={{  width: '700px',display:'flex',marginTop: '80px', }}>
 
                    <div className="payment-form row1" style={{ flex: '0 0 30%', marginRight: '0px' }} >
@@ -1453,6 +1455,8 @@ useEffect(() => {
             </div>
           )}
       </div>
+      <ToastContainer />
+
     </div>
   );
 }

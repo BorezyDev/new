@@ -8,6 +8,8 @@ import '../Product/Addproduct.css';
 import { FaPlus } from 'react-icons/fa';
 import UserHeader from '../UserDashboard/UserHeader';
 import UserSidebar from '../UserDashboard/UserSidebar';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 function EditProduct() {
   const { productCode } = useParams(); // Get productCode from URL
@@ -123,11 +125,12 @@ function EditProduct() {
       const productRef = doc(db, 'products', productCode);
       await setDoc(productRef, productData);
 
-      alert('Product updated successfully!');
-      navigate('/productdashboard');
+      toast.success('Product updated successfully!');
+
+     setTimeout(() =>  navigate('/productdashboard'),5000);
     } catch (error) {
       console.error('Error updating product: ', error);
-      alert('Failed to update product');
+      toast.error('Failed to update product');
     }
   };
 
@@ -193,14 +196,14 @@ function EditProduct() {
             <div className="bottom-left">
               <label>Base Rent</label>
               <input
-                type="number"
+                type="text"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
               />
               <label>Deposit</label>
               <input
-                type="number"
+                type="text"
                 value={deposit}
                 onChange={(e) => setDeposit(e.target.value)}
                 required
@@ -215,14 +218,14 @@ function EditProduct() {
               </select>
               <label>Minimum Rental Period</label>
               <input
-                type="number"
+                type="text"
                 value={minimumRentalPeriod}
                 onChange={(e) => setMinimumRentalPeriod(e.target.value)}
               />
               <label>Add-On Charges</label>
               <div className="extra-rent-group">
                 <input
-                  type="number"
+                  type="text"
                   value={extraRent}
                   onChange={(e) => setExtraRent(e.target.value)}
                   style={{ width: '90%' }}
@@ -240,6 +243,7 @@ function EditProduct() {
           </div>
         </form>
       </div>
+      <ToastContainer/>
     </div>
   );
 }

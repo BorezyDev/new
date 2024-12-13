@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'; // Navigation
 import { useUser } from '../Auth/UserContext'; // Access user data from context
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import './Adduser.css';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const AddUser = () => {
   const { userData } = useUser(); // Get user data from context
@@ -63,7 +65,7 @@ const AddUser = () => {
 
     // Check if user limit is reached
     if (userLimitReached) {
-      alert('User limit reached. No more users can be added.');
+      toast.error('User limit reached. No more users can be added.');
       return;
     }
 
@@ -120,11 +122,11 @@ const AddUser = () => {
       setDate('');
 
       // Redirect to users list after success
-      alert('User added successfully');
-      navigate('/usersidebar/users');
+      toast.success('User added successfully');
+      setTimeout(() => navigate('/usersidebar/users'),5000)
     } catch (error) {
       console.error('Error adding user:', error);
-      alert('Failed to add user. Please check if the email ID is incorrect or already exists.');
+      toast.error('Failed to add user. Please check if the email ID is incorrect or already exists.');
     }
   };
 
@@ -257,6 +259,7 @@ const AddUser = () => {
           </button>
         </div>
       </form>
+      <ToastContainer/>
     </div>
   );
 };
