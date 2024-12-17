@@ -70,7 +70,7 @@ const CreateTemplate = () => {
       setTemplateName("");
       setTemplateBody("");
 
-      setTimeout(() =>navigate("/templates-dashboard"),5000);
+      setTimeout(() =>navigate("/overview"),5000);
     } catch (error) {
       console.error("Error creating template:", error);
       toast.error("Failed to create template.");
@@ -158,7 +158,7 @@ const CreateTemplate = () => {
         >
           Create Template
         </button>
-        <button onClick={() => navigate('/templates-dashboard')}
+        <button onClick={() => navigate('/overview')}
          type="button" 
          style={{
             backgroundColor: "#28a745",

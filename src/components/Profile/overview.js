@@ -1,172 +1,166 @@
-import React, { useState,useEffect, } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { collection, getDocs, deleteDoc, doc, where, query } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { FaSearch, FaDownload, FaEdit, FaTrash, FaPlus, FaUpload } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { useUser } from '../Auth/UserContext';
+import Papa from "papaparse"; // Import PapaParse for CSV operations
+import { useUser } from "../Auth/UserContext"; // Assuming you're using a UserContext for branchCode
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
+import './TempateDashboard.css';
 const SingleComponent = () => {
-  const [templateName, setTemplateName] = useState("");
-  const [templateBody, setTemplateBody] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [originalTemplates, setOriginalTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // Search query state
+  const [searchField, setSearchField] = useState("name"); // Search field state
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-  // Placeholder options for booking data
-  const placeholders = [
-    {label: "Client Name", value: "{clientName}" },
-    {label: "Client Email", value: "{clientEmail}" },
-    {label:"Contact No",value:"{ContactNo}"},
-    {label:"Identity Proof",value:"{IdentityProof}"},
-    {label:"Identity Number",value:"{IdentityNumber}"},
-    {label:"Stage",value:"{stage}"},
-    {label:"CustomerBy",value:"{CustomerBy}"},
-    {label:"ReceiptBy",value:"{ReceiptBy}"},
-    {label:"Alterations",value:"{Alterations}"},
-    {label:"SpecialNote",value:"{SpecialNote}"},
-    {label:"GrandTotalRent",value:"{GrandTotalRent}"},
-    {label:"DiscountOnRent",value:"{DiscountOnRent}"},
-    {label:"FinalRent",value:"{FinalRent}"},
-    {label:"GrandTotalDeposit",value:"{GrandTotalDeposit}"},
-    {label:"DiscountOnDeposit",value:"{DiscountOnDeposit}"},
-    {label:"FinalDeposit",value:"{FinalDeposit}"},
-    {label:"AmountToBePaid",value:"{AmountToBePaid}"},
-    {label:"AmountPaid",value:"{AmountPaid}"},
-    {label:"Balance",value:"{Balance}"},
-    {label:"PaymentStatus",value:"{PaymentStatus}"},
-    {label:"FirstPaymentDetails",value:"{FirstPaymentDetails}"},
-    {label:"FirstPaymentMode",value:"{FirstPaymentMode}"},
-    {label:"SecondPaymentMode",value:"{SecondPaymentMode}"},
-    {label:"SecondPaymentDetails",value:"{SecondPaymentDetails}"},
-    { label: "Receipt Number", value: "{receiptNumber}" },
-    { label: "Pickup Date", value: "{pickupDate}" },
-    { label: "Return Date", value: "{returnDate}" },
-    
-  ];
-  const [branchCode, setBranchCode] = useState(''); // Store branch code
+  const { userData } = useUser(); // Access userData from the context
 
-  const { userData } = useUser(); // Get user data from context
-  useEffect(() => {
-    if (userData && userData.branchCode) {
-      setBranchCode(userData.branchCode);
-    }
-  }, [userData]);
-
-  const handleCreateTemplate = async (e) => {
-    e.preventDefault();
-
-    if (!templateName || !templateBody) {
-      setMessage("Both fields are required!");
-      return;
-    }
-
+  // Fetch templates from Firestore
+  const fetchTemplates = async () => {
     try {
-      await addDoc(collection(db, "templates"), {
-        name: templateName,
-        body: templateBody,
-        createdAt: new Date(),
-        branchCode:branchCode,
-      });
-      setMessage("Template created successfully!");
-      setTemplateName("");
-      setTemplateBody("");
-      navigate("/templates-dashboard");
+      const q = query(
+        collection(db, "templates"),
+        where('branchCode', '==', userData.branchCode)
+      );
+      const querySnapshot = await getDocs(q);
+      const templatesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTemplates(templatesData);
+      setOriginalTemplates(templatesData);
     } catch (error) {
-      console.error("Error creating template:", error);
-      setMessage("Failed to create template.");
+      console.error("Error fetching templates:", error);
+      toast.warn("Failed to load templates.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Function to insert a placeholder into the template body
-  const insertPlaceholder = (placeholder) => {
-    setTemplateBody((prev) => `${prev} ${placeholder}`);
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this template?");
+    if (confirmDelete) {
+      try {
+        const templateDocRef = doc(db, "templates", id);
+        await deleteDoc(templateDocRef);
+        setTemplates(templates.filter((template) => template.id !== id));
+      } catch (error) {
+        console.error("Error deleting template:", error);
+      }
+    }
+  };
+
+  const handleEdit = (id) => {
+    navigate(`/edittemplate/${id}`);
+  };
+
+  const handleSearch = () => {
+    const lowerCaseQuery = searchQuery.toLowerCase();
+    if (lowerCaseQuery === "") {
+      setTemplates(originalTemplates); // Show all templates if search query is empty
+    } else {
+      const filteredTemplates = originalTemplates.filter((template) =>
+        template[searchField]?.toLowerCase().includes(lowerCaseQuery)
+      );
+      setTemplates(filteredTemplates);
+    }
+  };
+
+  useEffect(() => {
+    handleSearch();
+  }, [searchQuery, searchField]);
+
+  const exportToCSV = () => {
+    const csv = Papa.unparse(templates);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "templates.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
-    <div style={{ maxWidth: "500px", margin: "0 auto", padding: "20px" }}>
-      <h2>Create Template</h2>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleCreateTemplate}>
-        <div style={{ marginBottom: "15px" }}>
-          <label htmlFor="templateName" style={{ display: "block" }}>
-            Template Name
-          </label>
-          <input
-            id="templateName"
-            type="text"
-            value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
-            placeholder="Enter template name"
-            style={{
-              width: "100%",
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "15px" }}>
-          <label htmlFor="templateBody" style={{ display: "block" }}>
-            Template Body
-          </label>
-          <textarea
-            id="templateBody"
-            value={templateBody}
-            onChange={(e) => setTemplateBody(e.target.value)}
-            placeholder="Enter template body"
-            style={{
-              width: "100%",
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              minHeight: "100px",
-            }}
-          ></textarea>
-          <div style={{ marginTop: "10px" }}>
-            <label>Insert Placeholders:</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "5px" }}>
-              {placeholders.map((placeholder) => (
-                <button
-                  key={placeholder.value}
-                  type="button"
-                  onClick={() => insertPlaceholder(placeholder.value)}
-                  style={{
-                    padding: "5px 10px",
-                    borderRadius: "4px",
-                    backgroundColor: "#007bff",
-                    color: "#fff",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  {placeholder.label}
-                </button>
-              ))}
-            </div>
+    <div  style={{ overflowY: "auto" }}className={`dashboard-container ${sidebarOpen ? "sidebar-open" : ""}`}>
+      <div   className="dashboard-content">
+
+        <div style={{ marginTop: "30px"}} className="toolbar-container6">
+          <div className="search-bar-container7">
+            <select
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value)}
+              className="search-dropdown7"
+            >
+              <option value="name">Template Name</option>
+              <option value="body">Template Body</option>
+            </select>
+            <input
+              type="text"
+              placeholder={`Search by...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="action-buttons">
+            <label className="export-button" onClick={exportToCSV}>
+              <FaUpload /> Export
+            </label>
+            <label className="add-product-button" onClick={() => navigate("/addtemplate")}>
+              <FaPlus /> Create Template
+            </label>
           </div>
         </div>
-        <button
-          type="submit"
-          style={{
-            backgroundColor: "#28a745",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            padding: "10px 15px",
-            cursor: "pointer",
-          }}
-        >
-          Create Template
-        </button>
-        <button onClick={() => navigate('/templates-dashboard')}
-         type="button" 
-         style={{
-            backgroundColor: "#28a745",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            padding: "10px 15px",
-            marginLeft:"10px",
-            cursor: "pointer",
-          }}>Cancel</button>
+        <h2 style={{ marginLeft: "10px", marginTop: "20px" }}>MyTemplates ({templates.length})</h2>
 
-      </form>
+        <div className="card1-container">
+          {loading ? (
+            <p>Loading templates...</p>
+          ) : templates.length > 0 ? (
+            templates.map((template) => (
+              <div key={template.id} className="card1-wrapper">
+                {/* card1 Section */}
+                <div className="card1" style={{ width: "80%", }}>
+                  <p>Template Name: {template.name}</p>
+                  <p>Template Body: {template.body}</p>
+                  <p>Created At: {new Date(template.createdAt.seconds * 1000).toLocaleString()}</p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="action-box">
+                  <label onClick={() => handleEdit(template.id)}>
+                    <FaEdit />
+                  </label>
+                </div>
+                <div className="action-box1">
+                  {userData?.role !== "Subuser" && (
+                    <label onClick={() => handleDelete(template.id)}>
+                      <FaTrash />
+                    </label>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No templates found</p>
+          )}
+        </div>
+      </div>
+
+      <ToastContainer />
     </div>
   );
 };

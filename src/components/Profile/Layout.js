@@ -41,7 +41,7 @@ const Layout = () => {
       <div className='profile1'>
         <nav>
           <ul>
-            <NavigationItem to={isBranchManager ? "/addtemplate" : "/addtemplate"} label="Create Template" />
+            <NavigationItem to={isBranchManager ? "/overview" : "/overview"} label="Template" />
 
             <NavigationItem to={isSuperAdmin ? "/superadmin" : "/usersidebar/users"} label={isSuperAdmin ? "Super Admin" : "Create Users"} />
 
