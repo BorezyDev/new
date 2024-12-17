@@ -2,17 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig'; // Assuming you have Firebase initialized here
-import { useUser } from '../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
+import { db } from '../../firebaseConfig';
+import { useUser } from '../Auth/UserContext';
 import '../Product/Addproduct.css';
 import { FaPlus } from 'react-icons/fa';
 import UserHeader from '../UserDashboard/UserHeader';
 import UserSidebar from '../UserDashboard/UserSidebar';
-import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function EditProduct() {
-  const { productCode } = useParams(); // Get productCode from URL
+  const { productCode } = useParams();
   const [productName, setProductName] = useState('');
   const [brandName, setBrandName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -36,7 +36,6 @@ function EditProduct() {
       setBranchCode(userData.branchCode);
     }
 
-    // Fetch product data when component mounts
     const fetchProductData = async () => {
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
@@ -69,7 +68,8 @@ function EditProduct() {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
 
-    if (files.length > 0) {
+    // Limit to 2 images
+    if (images.length + files.length <= 2) {
       const newImages = files.map((file) => ({
         file,
         preview: URL.createObjectURL(file), // Create local preview for new images
@@ -77,6 +77,8 @@ function EditProduct() {
 
       // Add new images without removing existing image URLs
       setImages((prevImages) => [...prevImages, ...newImages]);
+    } else {
+      toast.warn('You can upload a maximum of 2 images.');
     }
   };
 
@@ -84,6 +86,10 @@ function EditProduct() {
     if (imageInputRef.current) {
       imageInputRef.current.click();
     }
+  };
+
+  const handleImageRemove = (index) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -101,7 +107,6 @@ function EditProduct() {
           const imageUrl = await getDownloadURL(storageRef);
           uploadedImageUrls.push(imageUrl);
         } else {
-          // If it's an existing image URL, retain it
           uploadedImageUrls.push(image.preview);
         }
       }
@@ -126,8 +131,7 @@ function EditProduct() {
       await setDoc(productRef, productData);
 
       toast.success('Product updated successfully!');
-
-     setTimeout(() =>  navigate('/productdashboard'),5000);
+      setTimeout(() => navigate('/productdashboard'), 5000);
     } catch (error) {
       console.error('Error updating product: ', error);
       toast.error('Failed to update product');
@@ -153,7 +157,7 @@ function EditProduct() {
               <input value={productName} onChange={(e) => setProductName(e.target.value)} required />
 
               <label>Product Code</label>
-              <input value={productCode} readOnly required /> {/* Product Code should not be editable */}
+              <input value={productCode} readOnly required />
 
               <label>Quantity</label>
               <input value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
@@ -166,29 +170,52 @@ function EditProduct() {
           <div className="right">
             <label>Upload Images</label>
             <div className="image-upload-box" onClick={handleImageClick}>
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  style={{
-                    backgroundImage: `url(${image.preview})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    width: '100px',
-                    height: '100px',
-                    margin: '5px',
-                  }}
-                />
-              ))}
-              <span style={{ fontSize: '24px', color: '#999', }}>
-                <FaPlus />
-              </span>
+              {images.length > 0 ? (
+                images.map((image, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      backgroundImage: `url(${image.preview})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      width: '100px',
+                      height: '100px',
+                      margin: '5px',
+                      position: 'relative',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleImageRemove(index)}
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        right: '0',
+                        backgroundColor: 'red',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      x
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <span style={{ fontSize: '24px', color: '#999' }}>
+                  <FaPlus />
+                </span>
+              )}
             </div>
             <input
               type="file"
               multiple
               onChange={handleImageChange}
               ref={imageInputRef}
-              style={{ display: 'none' }} // Hide file input
+              style={{ display: 'none' }}
             />
           </div>
 
@@ -228,12 +255,10 @@ function EditProduct() {
                   type="text"
                   value={extraRent}
                   onChange={(e) => setExtraRent(e.target.value)}
-                  style={{ width: '90%' }}
                 />
               </div>
             </div>
           </div>
-
           <div className="right1">
             <label>Brand Name</label>
             <input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
@@ -243,7 +268,7 @@ function EditProduct() {
           </div>
         </form>
       </div>
-      <ToastContainer/>
+      <ToastContainer />
     </div>
   );
 }

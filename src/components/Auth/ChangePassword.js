@@ -4,7 +4,7 @@ import { getAuth, reauthenticateWithCredential, EmailAuthProvider, updatePasswor
 import { useNavigate } from 'react-router-dom';
 import { TextField, Button } from '@mui/material';
 import './changePassword.css'; // Import the CSS
-import backIcon from '../../assets/icons8-back-30.png'
+import backIcon from '../../assets/arrowiosback_111116.png'
 import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
 import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 

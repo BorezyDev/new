@@ -3,7 +3,7 @@ import { Outlet, NavLink ,useNavigate} from 'react-router-dom';
 import { useUser } from '../Auth/UserContext'; // Import the context
 import logo from '../../assets/profile-logo.png';
 import './Profile.css';
-import backIcon from '../../assets/icons8-back-30.png'
+import backIcon from '../../assets/arrowiosback_111116.png'
 const NavigationItem = ({ to, label }) => (
   <li>
     <NavLink to={to}>{label}</NavLink>

@@ -48,6 +48,7 @@ function Booking() {
   const { userData } = useUser();
   const [discount, setDiscount] = useState(0); // State for the discount input
 // State for the updated grand total
+const [productSuggestions, setProductSuggestions] = useState([]);
 
 // Handle discount change
 const handleDiscountChange = (e) => {
@@ -75,21 +76,69 @@ const handleDiscountChange = (e) => {
 
   
  
+  const handleProductChange = async (index, event) => {
+    const { name, value } = event.target;
+    const newProducts = [...products];
+    newProducts[index][name] = value;
 
+    if (name === 'productCode' && value.trim()) {
+      // Fetch product suggestions from Firestore based on input
+      fetchProductSuggestions(value);
+    } else {
+      setProductSuggestions([]); // Clear suggestions if input is empty
+    }
+
+    setProducts(newProducts);
+  };
+
+  // Fetch product suggestions based on the entered product code
+  const fetchProductSuggestions = async (searchTerm) => {
+    try {
+      // Fetch all products for the logged-in branch code
+      setLoggedInBranchCode(userData.branchCode);
   
+      const productsRef = collection(db, 'products');
+      const q = query(
+        productsRef,
+        where('branchCode', '==', loggedInBranchCode) // Filter by branchCode
+      );
   
-  // Function to fetch product image, price, and deposit based on productCode
+      const querySnapshot = await getDocs(q);
+  
+      const suggestions = [];
+      querySnapshot.forEach((doc) => {
+        const productData = doc.data();
+        if (productData.productCode && productData.productCode.includes(searchTerm)) {
+          suggestions.push({
+            productCode: productData.productCode,
+            productName: productData.productName || 'N/A',
+          });
+        }
+      });
+  
+      setProductSuggestions(suggestions);
+  
+      if (suggestions.length === 0) {
+        console.log('No products found for the logged-in branch');
+      }
+  
+    } catch (error) {
+      console.error('Error fetching product suggestions:', error);
+    }
+  };
+  
+  // Fetch product details when a product code is entered or selected
   const fetchProductDetails = async (productCode, index) => {
     try {
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
-     
+
       setLoggedInBranchCode(userData.branchCode);
-  
+
       if (productDoc.exists()) {
         const productData = productDoc.data();
-  
         const productBranchCode = productData.branchCode || '';
+
         if (productBranchCode === loggedInBranchCode) {
           const imagePath = productData.imageUrls ? productData.imageUrls[0] : null;
           const price = productData.price || 'N/A';
@@ -99,7 +148,7 @@ const handleDiscountChange = (e) => {
           const minimumRentalPeriod = productData.minimumRentalPeriod || 1;
           const extraRent = productData.extraRent || 0;
           const productName = productData.productName || 'N/A';
-  
+
           let imageUrl = null;
           if (imagePath) {
             const storage = getStorage();
@@ -108,7 +157,7 @@ const handleDiscountChange = (e) => {
           } else {
             imageUrl = 'path/to/placeholder-image.jpg';
           }
-  
+
           // Prevent unnecessary state updates
           setProducts((prevProducts) => {
             const newProducts = [...prevProducts];
@@ -141,6 +190,22 @@ const handleDiscountChange = (e) => {
       console.error('Error fetching product details:', error);
     }
   };
+
+  // Handle selection of a product from suggestions
+  const handleSuggestionClick = (index, suggestion) => {
+    const newProducts = [...products];
+    newProducts[index].productCode = suggestion.productCode;
+    setProducts(newProducts);
+    setProductSuggestions([]); // Clear suggestions
+
+    // Fetch product details for the selected product code
+    fetchProductDetails(suggestion.productCode, index);
+  };
+
+  
+  
+  // Function to fetch product image, price, and deposit based on productCode
+ 
   const generateReceiptNumber = async (branchCode) => {
     // Define the path where the receipt number counter is stored for a specific branch
     const receiptCounterRef = doc(db, 'branchCounters', branchCode); // Store each branch's receipt counter in a 'branchCounters' collection
@@ -229,18 +294,7 @@ const handleDiscountChange = (e) => {
 
   
   // Function to handle product input changes
-  const handleProductChange = (index, event) => {
-    const { name, value } = event.target;
-    const newProducts = [...products];
-    newProducts[index][name] = value;
   
-    if (name === 'productCode') {
-      fetchProductDetails(value, index); // Fetch image, price, and deposit when productCode is entered
-    }
-  
-    setProducts(newProducts);
-    
-  };
   
   const checkAvailability = async (index) => {
     const { productCode, pickupDate, returnDate, quantity } = products[index];
@@ -933,14 +987,27 @@ useEffect(() => {
             </div>
           </div>
           <div className="form-group1" >
-            <label>Product Code</label>
+          <label>Product Code</label>
             <input
               type="text"
               name="productCode"
               value={product.productCode}
-              onChange={(e) => handleProductChange(index, e)} 
+              onChange={(e) => handleProductChange(index, e)}
               required
             />
+            {productSuggestions.length > 0 && (
+              <ul className="suggestions-dropdown" style={{ border: '1px solid #ccc', maxHeight: '100px', overflowY: 'auto', listStyle: 'none', padding: '5px', margin: 0 }}>
+                {productSuggestions.map((suggestion, idx) => (
+                  <li
+                    key={idx}
+                    style={{ padding: '5px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
+                    onClick={() => handleSuggestionClick(index, suggestion)}
+                  >
+                    {suggestion.productCode} - {suggestion.productName}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
          
           
