@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc,arrayUnion } from 'firebase/firestore';
+import backIcon from '../../../assets/arrowiosback_111116.png';
 import { db } from '../../../firebaseConfig';
 import './BookingDetailsPage.css';
 import { useUser } from '../../Auth/UserContext';
@@ -180,7 +181,13 @@ const newLogEntry = {
     <>
       <div className="booking-details-container">
         {/* Activity Log Section at the Top Right */}
-        <button onClick={() => navigate('/usersidebar/clients')} type="button" className='can'>Back</button>
+        <div className='vaisak' >
+        <img
+          src={backIcon}
+          alt="button10"
+          onClick={() => navigate("/usersidebar/clients")} // Navigate to the profile page
+        />
+      </div>
 
         <div className="activity-log-container">
     <h3>Activity Log</h3>
@@ -236,7 +243,7 @@ const newLogEntry = {
           </div>
 
           <div className="product-details-container">
-            <h3>Product Details</h3>
+            <h2>Product Details</h2>
             <table className="product-details-table">
               <thead>
                 <tr>
@@ -281,7 +288,7 @@ const newLogEntry = {
           
 
           <div className="payment-info">
-            <h4>Payment Details</h4>
+            <h2>Payment Details</h2>
             <div className="info-row">
               <p><strong>Grand Total Rent:</strong> ₹{userDetails.grandTotalRent || 'N/A'}</p>
               <p><strong>Discount on Rent:</strong> ₹{userDetails.discountOnRent || 'N/A'}</p>
@@ -310,7 +317,7 @@ const newLogEntry = {
           </div>
 
           <div className="client-type-container">
-          <h5>Client Type</h5>
+          <h2>Client Type</h2>
           {isEditingSecondPayment ? (
           <div>
             <div className="info-row">

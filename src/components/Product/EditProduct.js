@@ -264,7 +264,8 @@ function EditProduct() {
             <input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
           </div>
           <div className="submit-button5">
-            <button type="submit">Update Product</button>
+          <button onClick={() => navigate('/productdashboard')} type="button" className='can1'>Cancel</button>
+            <button type="submit" className='pro'>Update Product</button>
           </div>
         </form>
       </div>

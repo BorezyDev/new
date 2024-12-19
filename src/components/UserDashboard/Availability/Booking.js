@@ -1014,7 +1014,7 @@ useEffect(() => {
           <div className="form-group1">
             <label>Quantity</label>
             <input
-              type="number"
+              type="text"
               name="quantity"
               value={product.quantity}
               onChange={(e) => handleProductChange(index, e)}

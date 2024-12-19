@@ -19,7 +19,7 @@
   background: #EEF8FF;
   border: 0.5px solid #164DC3;
   border-radius: 10px;
-  padding: 20px;
+  padding: 2px;
   flex: 1; /* Allows card1 to take full width */
   text-align: left;
   margin: 0; /* Remove any left margin */

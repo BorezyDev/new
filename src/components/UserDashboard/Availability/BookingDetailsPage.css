@@ -44,7 +44,9 @@
   margin: 0;
   font-size: 1rem;
   line-height: 1.5;
-  text-align: center;
+  text-align: left;
+  margin-left: 80px;
+  
 }
 
 .booking-details-container strong {
@@ -71,9 +73,9 @@
 
 .product-details-table th,
 .product-details-table td {
-  padding: 12px;
+  padding: 8px;
   text-align: center; /* Center table content */
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .product-details-table th {
@@ -279,4 +281,8 @@ label {
   margin-left: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.vaisak{
+  margin-left: -1000px;
 }

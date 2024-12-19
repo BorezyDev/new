@@ -1,6 +1,7 @@
 /* Additional styling for table and other elements */
 .dashboard-container{
     background-color: #ffffff;
+    overflow-x: auto;
   }
   .table-container {
       margin-top: 80px;
@@ -9,6 +10,7 @@
       overflow-y: auto; /* Enable vertical scrolling */
       position: relative; /* For positioning the scrollbar wrapper */
     }
+    
 
     .filter-container {
       display: flex;
@@ -118,14 +120,14 @@
     }
     
     /* Table headers and cells styling */
-    .table th, .table td {
+    .booking-table th, .booking-table td {
       padding: 15px;
       border-bottom: 1px solid #F3EFFC;
       font-family: 'Public Sans', sans-serif;
       font-size: 13px;
     }
     
-    .table th {
+    .booking-table th {
       border: 1px solid #ddd;
       height: 40px;
       font-weight: 600;
@@ -137,7 +139,7 @@
       padding: 10px;     /* Padding for spacing */
     }
     
-    .table td {
+    .booking-table td {
       border: 1px solid #ececec;
       background: #FFFFFF;
       font-weight: 400;
@@ -152,6 +154,8 @@
     .table td.status-deactive {
       color: #FF0000;
     }
+     
+    
     
     /* Styles for the Create Branch button */
     
@@ -264,3 +268,29 @@
     }
     
   
+    .table-container {
+      margin-top: 20px;
+      padding: 0 20px;
+    }
+    
+    .booking-table tbody tr {
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    
+    /* Hover effect for table rows in tbody */
+    .booking-table tbody tr:hover {
+      background-color: #f0f8ff; /* Light blue background */
+      transform: translateY(-1px) scale(1.02); /* Lift the row slightly and scale */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+      cursor: pointer; /* Pointer cursor */
+    }
+    
+    /* Optional: Add smooth hover effect to table cells */
+    .booking-table tbody td {
+      transition: color 0.3s ease;
+    }
+    
+    .booking-table tbody tr:hover td {
+      color: #164DC3; /* Change text color on hover */
+    }
+    

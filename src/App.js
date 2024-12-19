@@ -47,6 +47,7 @@ import ForgotPassword from './components/Auth/ForgotPassword';
 import ProductReport from './components/UserDashboard/productreport';
 import BookingDetailsPage from './components/UserDashboard/Availability/BookingDetailsPage';
 import Logout from './components/Auth/Logout';
+import EditTemplate from './components/Profile/edittemplate';
 
 const App = () => (
  
@@ -259,6 +260,11 @@ const App = () => (
         <Route path='/editclientlead/:id' element={
           <PrivateRoute>
             <EditCLead />
+          </PrivateRoute>
+        } />
+        <Route path='/edittemplate/:id' element={
+          <PrivateRoute>
+            <EditTemplate />
           </PrivateRoute>
         } />
 

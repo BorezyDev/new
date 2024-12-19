@@ -4,6 +4,8 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useUser } from '../Auth/UserContext';
 import { useNavigate } from 'react-router-dom';
 import './productreport.css';
+import backIcon from '../../assets/arrowiosback_111116.png';
+
 
 const ProductReport = () => {
   const [salesData, setSalesData] = useState([]);
@@ -179,10 +181,16 @@ const ProductReport = () => {
 
   return (
     <div className="sales-report-container">
+      
+      
+        <div className='vaisakk' >
+        <img
+          src={backIcon}
+          alt="button10"
+          onClick={() => navigate("/usersidebar/dashboard")} // Navigate to the profile page
+        />
+      </div>
       <h2>Product Report</h2>
-      <button className="back-button" onClick={() => navigate('/welcome')}>
-        Back to Dashboard
-      </button>
 
       <h3>Most Rented Products</h3>
 <table className="sales-table">

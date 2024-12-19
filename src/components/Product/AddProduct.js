@@ -268,7 +268,7 @@ function AddProduct() {
           <input value={brandName} onChange={(e) => setBrandName(e.target.value)} required />
           <div className="submit-button5" >
           <button onClick={() => navigate('/productdashboard')} type="button" className='can'>Cancel</button>
-          <button onClick={handleSubmit}>Add Product</button>
+          <button onClick={handleSubmit} className='pro'> Add Product</button>
         </div>
           </div>
       </form>

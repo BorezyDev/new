@@ -181,16 +181,42 @@ input[type="file"] {
 }
 
 
-.submit-button5 .can {
+.can {
 margin-top: 70px;
 background-color: #ebebeb;
+color: #000;
+
+height: 33px;
+
+border: none;
+border-radius: 5px;
+font-family: 'Public Sans', sans-serif;
+font-weight: 500;
+font-size: 13px;
+
+cursor: pointer;
+width: 100%;
 }
 
-.submit-button5 .can :hover{
-  background-color: #dddddd;
-  }
-.submit-button5 button  {
+
+
+.can1 {
+  margin-top: 20px;
+  background-color: #ebebeb;
+  color: #000;
   
+  height: 33px;
+  
+  border: none;
+  border-radius: 5px;
+  font-family: 'Public Sans', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  
+  cursor: pointer;
+  width: 100%;
+  }
+.pro{
   margin-top: 20px;
   height: 33px;
   background-color: #28a745;
@@ -202,13 +228,9 @@ background-color: #ebebeb;
   color: #FFFFFF;
   cursor: pointer;
   width: 100%;
-
 }
- 
-
-
-.submit-button5 button:hover {
-  background-color: #218838;
+.pro :hover{
+  background-color: #00e000;
 }
 
 
@@ -291,3 +313,4 @@ background-color: #ebebeb;
 input[type="file"] {
   display: none;
 }
+

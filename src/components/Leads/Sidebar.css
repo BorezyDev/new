@@ -5,7 +5,7 @@
   width: 250px;
   height: calc(100% - 62px); /* Adjust height to fill viewport height minus top position */
   color: white;
-  transition: left 0.3s ease;
+  transition: left 0.5s ease;
   padding: 20px;
   z-index: 1; /* Ensure it's above other content */
   background: #FFFFFF;
