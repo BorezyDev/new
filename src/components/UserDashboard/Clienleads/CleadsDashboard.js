@@ -9,6 +9,9 @@ import CSidebar from '../../UserDashboard/UserSidebar'; // Import the Sidebar co
 import ClientHeader from '../../UserDashboard/UserHeader'; // Import the Header component
 import { useUser } from '../../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
 import CRightSidebar from './rsidebar';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const ClientLeadsDashboard = () => {
   const [leads, setLeads] = useState([]);
   const [totalLeads, setTotalLeads] = useState(0); // State to keep track of total leads
@@ -40,7 +43,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
         setOriginalLeads(fetchedLeads);
         setTotalLeads(fetchedLeads.length);
       } catch (error) {
-        console.error('Error fetching client leads:', error);
+        toast.error('Error fetching client leads:', error);
       } finally {
         setLoading(false);
       }
@@ -58,7 +61,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
         setLeads(leads.filter((lead) => lead.id !== id));
         setTotalLeads(totalLeads - 1);
       } catch (error) {
-        console.error('Error deleting client lead:', error);
+        toast.error('Error deleting client lead:', error);
       }
     }
   };
@@ -94,7 +97,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     navigator.clipboard.writeText(formattedText.trim());
   
     // Display a confirmation alert
-    alert("Product details copied to clipboard:\n" );
+    toast.success("Product details copied to clipboard:\n" );
   };
   const handleSearch = () => {
     const lowerCaseQuery = searchQuery.toLowerCase();
@@ -211,6 +214,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
                     <div className="action-buttons">
                       <label onClick={() => handlecopy(lead)}><FaCopy style={{ color: '#757575', cursor: 'pointer' }} /> </label> {/* Pass the product object */}
 
+
                       <label onClick={() => handleEdit(lead.id)}><FaEdit style={{ color: '#757575' , cursor: 'pointer'}} /></label>
                       {userData?.role !== 'Subuser' && (
             <label onClick={() => handleDelete(lead.id)}>
@@ -226,6 +230,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
           ) : (
             <p>No client leads found</p>
           )}
+           <ToastContainer/>
         </div>
       </div>
       <CRightSidebar
@@ -233,7 +238,9 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
         onClose={() => setIsSidebarOpen(false)}
         selectedLead={selectedLead}
       />
+      
     </div>
+
   );
 };
 
