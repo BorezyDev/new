@@ -1,6 +1,7 @@
 
 import CreateTemplatePage from './components/UserDashboard/CreateTemplatePage';
-import TemplatesDashboard from './components/UserDashboard/TemplatesDashboard';
+import TemplatesDashboard from './components/Admin/TemplatesDashboard';
+import SCreateTemplate from './components/Admin/CreateTempS';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
@@ -115,6 +116,11 @@ const App = () => (
         <Route path="/create-branch" element={
           <PrivateRoute>
             <CreateBranch />
+          </PrivateRoute>
+        } />
+        <Route path="/Screate-Template" element={
+          <PrivateRoute>
+            <SCreateTemplate />
           </PrivateRoute>
         } />
 
@@ -285,11 +291,7 @@ const App = () => (
             <BookingDetailsPage />
           </PrivateRoute>
         } />
-        <Route path="/templates-dashboard" element={
-          <PrivateRoute>
-            <TemplatesDashboard />
-          </PrivateRoute>
-        } />
+        
         <Route path="/addtemplate" element={
           <PrivateRoute>
             <CreateTemplatePage />
@@ -313,6 +315,11 @@ const App = () => (
               <Overview />
             </PrivateRoute>
           } />
+          <Route path="templates-dashboard" element={
+          <PrivateRoute>
+            <TemplatesDashboard />
+          </PrivateRoute>
+        } />
         </Route>
       </Routes>
     </Router>

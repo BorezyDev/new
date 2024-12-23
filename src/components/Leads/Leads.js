@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc,addDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Papa from 'papaparse';
 import './Leads.css';
+import 'react-toastify/dist/ReactToastify.css';
+import '../UserDashboard/Clienleads/Cleads.css';
 
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -11,6 +13,7 @@ import RightSidebar from './RightSidebar';
 import search from '../../assets/Search.png';
 
 import { FaPlus, FaUpload , FaDownload, FaEdit, FaCopy} from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -20,10 +23,15 @@ const Leads = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
-  const [importedData, setImportedData] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [combinedLeads, setCombinedLeads] = useState([]);
+  const [importedData, setImportedData] = useState([]); // Initialize as an empty array
 
+  // Update combined data when filteredLeads or importedData change
+  useEffect(() => {
+    setCombinedLeads([...filteredLeads, ...importedData]);
+  }, [filteredLeads, importedData]);
   const handleBusinessNameClick = (lead) => {
     setSelectedLead(lead);
     setRightSidebarOpen(true);
@@ -142,20 +150,53 @@ const Leads = () => {
 
   const handleImport = (event) => {
     const file = event.target.files[0];
+    console.log("Selected File:", file); // Debug file selection
+  
     if (file) {
       Papa.parse(file, {
-        header: true,
-        complete: (result) => {
-          const importedLeads = result.data.map((row) => ({
-            ...row,
-            nextFollowup: new Date(row.nextFollowup).toISOString(),
-          }));
-          setImportedData(importedLeads);
-          console.log(importedLeads);
+        header: true, // Ensure CSV has headers
+        skipEmptyLines: true, // Skip empty rows
+        complete: async (result) => {
+          console.log("Parsed Result:", result.data); // Debug parsed data
+          const importedLeads = result.data
+            .filter((row) => Object.values(row).some((value) => value !== null && value !== "")) // Remove empty rows
+            .map((row) => {
+              let parsedNextFollowup = null;
+              if (row.nextFollowup && !isNaN(new Date(row.nextFollowup))) {
+                parsedNextFollowup = new Date(row.nextFollowup).toISOString();
+              }
+              return {
+                ...row,
+                nextFollowup: parsedNextFollowup,
+              };
+            });
+  
+          console.log("Imported Leads:", importedLeads); // Debug processed leads
+          setImportedData(importedLeads); // Update state
+  
+          try {
+            // Save data to Firestore
+            const leadsCollection = collection(db, 'leads'); // Replace 'leads' with your collection name
+            for (const lead of importedLeads) {
+              await addDoc(leadsCollection, lead);
+            }
+            console.log("Data saved to Firestore successfully!");
+            toast.success("Leads imported and saved to database successfully!");
+          } catch (error) {
+            console.error("Error saving data to Firestore:", error); // Debug database save errors
+            toast.error("Failed to save data to the database. Please try again.");
+          }
+        },
+        error: (error) => {
+          console.error("Error Parsing CSV:", error); // Debug any parsing errors
+          toast.error("Error parsing the CSV file. Please check the file format.");
         },
       });
     }
   };
+  
+  
+  
 
   const handlecopy = (leads) => {
     // Destructure product details from the product object
@@ -176,7 +217,7 @@ const Leads = () => {
     navigator.clipboard.writeText(formattedText.trim());
   
     // Display a confirmation alert
-    alert("Lead details copied to clipboard:\n" );
+    toast.success("Lead details copied to clipboard:\n" );
   };
   return (
     <div className={`dashboard-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -237,7 +278,7 @@ const Leads = () => {
         </div>
 
         <div className="table-container">
-          <table className="table1">
+          <table className="table">
             <thead>
               <tr>
                 <th>Sr. No.</th>
@@ -277,6 +318,7 @@ const Leads = () => {
             </tbody>
           </table>
         </div>
+        <ToastContainer/>
       </div>
       <RightSidebar isOpen={rightSidebarOpen} onClose={closeRightSidebar} selectedLead={selectedLead} />
     </div>

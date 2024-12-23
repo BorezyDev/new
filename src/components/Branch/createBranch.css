@@ -79,6 +79,21 @@
 .create-branch button[type="submit"]:hover {
   background-color: linear-gradient(187.36deg, #175CFF 5.38%, #0E3799 93.96%);
 }
+.create-branch button[type="submit1"] {
+  left: 660px;
+  bottom: 80px;
+  position: absolute;
+  width: 131px;
+  height: 40px;
+  color: #000;
+  background: #d0d0d0;
+  border-radius: 10px;
+  border-color: #ffffff;
+}
+
+.create-branch button[type="submit1"]:hover {
+  background-color: linear-gradient(187.36deg, #175CFF 5.38%, #0E3799 93.96%);
+}
 
 .create-branch .error-message {
   color: red;

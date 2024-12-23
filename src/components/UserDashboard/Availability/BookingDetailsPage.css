@@ -286,3 +286,17 @@ label {
 .vaisak{
   margin-left: -1000px;
 }
+@media print {
+  .activity-log-container, /* Hide activity log */
+  .vaisak,                 /* Hide back icon */
+  footer {                 /* Hide footer if present */
+    display: none;
+  }
+  header {
+    display: none;
+  }
+
+  .print-button {
+    display: none; /* Hide the print button */
+  }
+}

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, updateDoc ,doc,getDoc,setDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { FaWhatsapp } from 'react-icons/fa';
 import './RightSidebar.css'; // Adjust the path as per your directory structure
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 
 const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
   const [status, setStatus] = useState('');
@@ -14,12 +16,13 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templateBody, setTemplateBody] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const templates = {
-    'Details Shared': 'Thank you for your interest. Let us know if you have any further questions!',
-    'Demo Scheduled': 'Hello, this is a reminder for your demo scheduled tomorrow.',
-    'Demo Done': 'Congratulations! Your demo has been successfully completed.',
-  };
+  const [selectedContactNo, setSelectedContactNo] = useState(null);
+
+  const [templates, setTemplates] = useState([]);
+
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   useEffect(() => {
     if (selectedLead) {
@@ -56,19 +59,83 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
     }
   };
 
-  const handleTemplateSelect = (template) => {
-    setSelectedTemplate(template);
-    setTemplateBody(templates[template] || '');
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const templatesCol = query(
+          collection(db, "Stemplates"),
+      
+
+        );
+
+        const templatesSnapshot = await getDocs(templatesCol);
+        const templatesList = templatesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTemplates(templatesList);
+      } catch (error) {
+        toast.error("Error fetching templates:", error);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen ? "hidden" : "auto";
+  }, [isModalOpen]);
+
+  // Function to send WhatsApp message
+  const sendWhatsAppMessage = (contactNumber, message) => {
+    if (!contactNumber) {
+      toast.error("No contact number provided!");
+      return;
+    }
+
+    // Check if the contact number starts with +91 or not
+    const formattedContactNo = contactNumber.startsWith("+91")
+      ? contactNumber
+      : `+91${contactNumber}`;
+
+    const whatsappURL = `https://api.whatsapp.com/send?phone=${formattedContactNo}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, "_blank");
   };
 
-  const handleTemplateBodyChange = (event) => {
-    setTemplateBody(event.target.value);
+
+  // Handle template click and send WhatsApp message
+  const handleTemplateClick = (template) => {
+    if (!selectedLead) {
+      toast.error("No booking selected!");
+      return;
+    }
+
+    const templateBody = template.body;
+
+    // Replace placeholders with booking data
+    const message = templateBody
+      .replace("{location}", selectedLead.location || "")
+      .replace("{businessName}", selectedLead.businessName || "")
+      .replace("{contactNumber}", selectedLead.contactNumber || "")
+      .replace("{emailId}", selectedLead.emailId || "")
+      .replace("{assignedTo}", selectedLead.assignedTo || "")
+      .replace("{source}", selectedLead.source || "")
+      .replace("{status}", selectedLead.status || "")
+      .replace("{nextFollowup}", selectedLead.nextFollowup || "");
+
+    sendWhatsAppMessage(selectedContactNo, message);
+
+    // Close modal after sending the message
+    setIsModalOpen(false);
   };
 
-  const handleSendTemplate = () => {
-    const whatsappLink = `https://api.whatsapp.com/send?phone=${selectedLead.contactNumber}&text=${encodeURIComponent(templateBody)}`;
-    window.open(whatsappLink, '_blank');
-    setIsOverlayOpen(false);
+  // Handle contact number selection
+  const handleContactNumberClick = (selectedLead) => {
+    setSelectedContactNo(selectedLead.contactNumber);
+    setSelectedBooking(selectedLead);
+    setIsModalOpen(true);
   };
 
   const toggleOverlay = () => {
@@ -200,46 +267,95 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
         <div className="sidebar-row full-width-row">
           <div className="save-button-container">
             <button className="save-button" onClick={handleSave}>Save</button>
-            <div className="whatsapp-container">
-              <FaWhatsapp 
-                size={30} 
-                color="#25D366" 
-                className="whatsapp-icon" 
-                onClick={toggleOverlay} 
-              />
-              {isOverlayOpen && (
+            <div className="action-buttons">
+              <button
+                onClick={() => handleContactNumberClick(selectedLead)}
+                style={{
+                  padding: "10px",
+                  borderRadius: "5px",
+                  backgroundColor: "#25D366",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <FaWhatsapp style={{ marginRight: "5px" }} />
+              </button>
+
+              {/* Modal for Templates */}
+              {isModalOpen && (
                 <>
-                  <div className="overlay-background" onClick={toggleOverlay}></div>
-                  <div className="overlay-box">
+                  {/* Modal Background Overlay */}
+                  <div
+                    onClick={() => setIsModalOpen(false)}
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      backgroundColor: "transparent", // Dimming effect
+                      zIndex: 999,
+                    }}
+                  ></div>
+
+                  {/* Modal Popup */}
+                  <div
+                    style={{
+                      position: "fixed",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      backgroundColor: "white",
+                      padding: "20px",
+                      borderRadius: "10px",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                      zIndex: 1000,
+                      maxWidth: "400px",
+                      width: "90%",
+                    }}
+                  >
                     <h3>Select a Template</h3>
-                    <select 
-                      value={selectedTemplate} 
-                      onChange={(e) => handleTemplateSelect(e.target.value)}
-                    >
-                      <option value="">Select Template</option>
-                      {Object.keys(templates).map((templateName, index) => (
-                        <option key={index} value={templateName}>
-                          {templateName}
-                        </option>
+                    <ul style={{ listStyleType: "none", padding: 0 }}>
+                      {templates.map((template) => (
+                        <li
+                          key={template.id}
+                          onClick={() => handleTemplateClick(template)}
+                          style={{
+                            padding: "10px",
+                            margin: "5px 0",
+                            border: "1px solid #ddd",
+                            borderRadius: "5px",
+                            cursor: "pointer",
+                            backgroundColor: "#f9f9f9",
+                          }}
+                        >
+                          {template.name}
+                        </li>
                       ))}
-                    </select>
-                    {selectedTemplate && (
-                      <div className="template-editor">
-                        <textarea
-                          value={templateBody}
-                          onChange={handleTemplateBodyChange}
-                          className="template-textarea"
-                        />
-                        <button onClick={handleSendTemplate} className="send-button">
-                          Send via WhatsApp
-                        </button>
-                      </div>
-                    )}
+                    </ul>
+                    <button
+                      onClick={() => setIsModalOpen(false)}
+                      style={{
+                        marginTop: "10px",
+                        padding: "10px",
+                        borderRadius: "5px",
+                        backgroundColor: "#ccc",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Close
+                    </button>
+                    <ToastContainer/>
                   </div>
                 </>
               )}
             </div>
           </div>
+
         </div>
       </div>
     </div>

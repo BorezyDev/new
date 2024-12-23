@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
- // Import CSS for react-toastify
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 import './editBranch.css';
 
 const EditBranch = () => {
@@ -15,6 +15,7 @@ const EditBranch = () => {
     branchCode: '',
     branchName: '',
     ownerName: '',
+    contactNumber: '',
     subscriptionType: 'monthly',
     activeDate: '',
     deactiveDate: '',
@@ -23,7 +24,10 @@ const EditBranch = () => {
     password: '',
     location: '',
   });
-  
+
+  const [comments, setComments] = useState([]); // State for comment history
+  const [newComment, setNewComment] = useState(''); // State for the new comment
+
   // Get today's date in yyyy-mm-dd format
   const today = new Date().toISOString().split('T')[0];
 
@@ -33,7 +37,9 @@ const EditBranch = () => {
         const branchDoc = doc(db, 'branches', id);
         const branchSnapshot = await getDoc(branchDoc);
         if (branchSnapshot.exists()) {
-          setFormData(branchSnapshot.data());
+          const branchData = branchSnapshot.data();
+          setFormData(branchData);
+          setComments(branchData.comments || []); // Fetch comments if they exist
         } else {
           toast.error('Branch not found.');
         }
@@ -48,7 +54,7 @@ const EditBranch = () => {
   // Function to handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({ ...prevState, [name]: value }));
+    setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
   const handleUpdateBranch = async (e) => {
@@ -72,116 +78,158 @@ const EditBranch = () => {
     }
   };
 
-  // Simple test to ensure toast notifications work
-  const testToast = () => toast.success("Test Toast Success!");
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      toast.error('Comment cannot be empty.');
+      return;
+    }
+
+    const comment = {
+      text: newComment,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      const branchDoc = doc(db, 'branches', id);
+      await updateDoc(branchDoc, {
+        comments: arrayUnion(comment), // Add comment to Firestore
+      });
+
+      setComments((prevComments) => [...prevComments, comment]); // Update local comments state
+      setNewComment(''); // Clear input field
+      toast.success('Comment added successfully.');
+    } catch (error) {
+      toast.error('Failed to add comment. Please try again.');
+    }
+  };
 
   return (
     <div className="create-branch">
       <h2>Edit Branch</h2>
-      
+
       <form onSubmit={handleUpdateBranch}>
         {/* Email ID and Password */}
         <div className="field-row">
           <div>
             <label>Email ID</label>
-            <input 
-              type="email" 
-              name="emailId" 
-              value={formData.emailId} 
-              onChange={handleChange} 
-              required 
+            <input
+              type="email"
+              name="emailId"
+              value={formData.emailId}
+              onChange={handleChange}
+              required
             />
           </div>
           <div>
             <label>Password</label>
-            <input 
-              type="password" 
-              name="password" 
-              value={formData.password} 
-              onChange={handleChange} 
-              required 
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
             />
           </div>
         </div>
         <div className="field-row">
           <div>
             <label>Branch Code</label>
-            <input 
-              type="text" 
-              name="branchCode" 
-              value={formData.branchCode} 
-              onChange={handleChange} 
-              required 
+            <input
+              type="text"
+              name="branchCode"
+              value={formData.branchCode}
+              onChange={handleChange}
+              required
             />
           </div>
           <div>
             <label>Location</label>
-            <input 
-              type="text" 
-              name="location" 
-              value={formData.location} 
-              onChange={handleChange} 
-              required 
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              required
             />
           </div>
         </div>
-        <label>Branch Name</label>
-        <input 
-          type="text" 
-          name="branchName" 
-          value={formData.branchName} 
-          onChange={handleChange} 
-          required 
-        />
-        
-        <label>Owner Name</label>
-        <input 
-          type="text" 
-          name="ownerName" 
-          value={formData.ownerName} 
-          onChange={handleChange} 
-          required 
-        />
-        
-        <label>Subscription Type</label>
-        <select 
-          name="subscriptionType" 
-          value={formData.subscriptionType} 
-          onChange={handleChange} 
-          required
-        >
-          <option value="daily">Daily</option>
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-        </select>
-        
-        <div className="date-fields-container">
+        <div className="field-row">
+          <div>
+            <label>Branch Name</label>
+            <input
+              type="text"
+              name="branchName"
+              value={formData.branchName}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label>Owner Name</label>
+            <input
+              type="text"
+              name="ownerName"
+              value={formData.ownerName}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+        <div className="field-row">
+
+          <div>
+            <label>Contact Number</label>
+            <input
+              type="text"
+              name="branchCode"
+              value={formData.contactNumber||'N/A'}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+
+            <label>Subscription Type</label>
+            <select
+              name="subscriptionType"
+              value={formData.subscriptionType}
+              onChange={handleChange}
+              required
+            >
+              <option value="daily">Daily</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="field-row">
           <div>
             <label>Start Date</label>
-            <input 
-                type="date" 
-                name="activeDate" 
-                value={formData.activeDate} 
-                onChange={handleChange} 
-                min={today} 
-                required 
+            <input
+              type="date"
+              name="activeDate"
+              value={formData.activeDate}
+              onChange={handleChange}
+              required
             />
           </div>
           <div>
             <label>End Date</label>
-            <input 
-                type="date" 
-                name="deactiveDate" 
-                value={formData.deactiveDate} 
-                onChange={handleChange} 
-                required 
+            <input
+              type="date"
+              name="deactiveDate"
+              value={formData.deactiveDate}
+              onChange={handleChange}
+              required
             />
           </div>
         </div>
 
-        <div className="number-of-users-amount-container">
-          <div className="number-of-users-container">
-            <label htmlFor="numberOfUsers">Number of Users</label>
+        <div className="field-row">
+          <div >
+            <label >Number of Users</label>
             <input
               type="number"
               id="numberOfUsers"
@@ -190,8 +238,8 @@ const EditBranch = () => {
               onChange={handleChange}
             />
           </div>
-          <div className="amount-container">
-            <label htmlFor="amount">Amount</label>
+          <div >
+            <label>Amount</label>
             <input
               type="number"
               id="amount"
@@ -200,12 +248,35 @@ const EditBranch = () => {
               onChange={handleChange}
             />
           </div>
-        </div>
 
-        <button type="submit">Edit Branch</button>
+
+        </div>
+        <div className="field-row">
+          <div className="comments-history">
+            {comments.map((comment, index) => (
+              <div key={index} className="comment">
+
+                <p>{comment.text} : {new Date(comment.timestamp).toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+          <div>
+            <textarea
+              placeholder="Add a comment"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <button onClick={handleAddComment}>Add Comment</button>
+          </div>
+        </div>
+        <button className="editbtnvaisak1" onClick={() => navigate('/branches')} >Cancel</button>
+
+        <button className='editbtnvaisak'>Edit Branch</button>
       </form>
-      
-      {/* Toast Container for Notifications */}
+
+
+
+
       <ToastContainer />
     </div>
   );

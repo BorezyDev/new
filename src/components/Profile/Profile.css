@@ -285,5 +285,26 @@ main {
   }
   
 }
+.status-expiring-soon {
+  background-color: yellow; /* or any other color you want */
+  color: black;
+}
 
 
+    /* Hover effect for table rows in tbody */
+    .table tbody tr:hover {
+      background-color: #f0f8ff; /* Light blue background */
+      transform: translateY(-1px) scale(1.02); /* Lift the row slightly and scale */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+      cursor: pointer; /* Pointer cursor */
+    }
+    
+    /* Optional: Add smooth hover effect to table cells */
+    .table tbody td {
+      transition: color 0.3s ease;
+    }
+    
+    .table tbody tr:hover td {
+      color: #164DC3; /* Change text color on hover */
+    }
+    
