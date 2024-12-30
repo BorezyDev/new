@@ -281,9 +281,10 @@ const AdminDashboard = () => {
     setSelectedBranch(branch);
     setIsModalOpen(true);
   };
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
 
   const toggleOverlay = () => {
-    setIsOverlayOpen(!isOverlayOpen);
+    setIsOverlayOpen((prevState) => !prevState);
   };
    useEffect(() => {
       if (isModalOpen) {

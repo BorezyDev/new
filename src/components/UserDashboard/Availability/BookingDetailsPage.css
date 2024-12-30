@@ -64,6 +64,7 @@
   border-radius: 6px;
   background-color: #fafafa;
   text-align: center;
+  width: 100%;
 }
 
 .product-details-table {
@@ -73,9 +74,9 @@
 
 .product-details-table th,
 .product-details-table td {
-  padding: 8px;
+  padding: 5px;
   text-align: center; /* Center table content */
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .product-details-table th {
@@ -285,18 +286,4 @@ label {
 
 .vaisak{
   margin-left: -1000px;
-}
-@media print {
-  .activity-log-container, /* Hide activity log */
-  .vaisak,                 /* Hide back icon */
-  footer {                 /* Hide footer if present */
-    display: none;
-  }
-  header {
-    display: none;
-  }
-
-  .print-button {
-    display: none; /* Hide the print button */
-  }
 }
