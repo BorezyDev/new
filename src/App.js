@@ -1,7 +1,6 @@
 
 import CreateTemplatePage from './components/UserDashboard/CreateTemplatePage';
-import TemplatesDashboard from './components/Admin/TemplatesDashboard';
-import SCreateTemplate from './components/Admin/CreateTempS';
+import TemplatesDashboard from './components/UserDashboard/TemplatesDashboard';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
@@ -49,6 +48,7 @@ import ProductReport from './components/UserDashboard/productreport';
 import BookingDetailsPage from './components/UserDashboard/Availability/BookingDetailsPage';
 import Logout from './components/Auth/Logout';
 import EditTemplate from './components/Profile/edittemplate';
+import Landing from './components/Auth/landing';
 
 const App = () => (
  
@@ -56,7 +56,11 @@ const App = () => (
     <Router>
       <Routes>
         {/* Public Route - Login Page */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Landing />} />
+
+        {/* Public Route - Login Page */}
+        <Route path="/Login" element={<Login />} />
+
 
         {/* Protected Routes */}
         <Route path="/dashboard" element={
@@ -116,11 +120,6 @@ const App = () => (
         <Route path="/create-branch" element={
           <PrivateRoute>
             <CreateBranch />
-          </PrivateRoute>
-        } />
-        <Route path="/Screate-Template" element={
-          <PrivateRoute>
-            <SCreateTemplate />
           </PrivateRoute>
         } />
 
@@ -291,7 +290,11 @@ const App = () => (
             <BookingDetailsPage />
           </PrivateRoute>
         } />
-        
+        <Route path="/templates-dashboard" element={
+          <PrivateRoute>
+            <TemplatesDashboard />
+          </PrivateRoute>
+        } />
         <Route path="/addtemplate" element={
           <PrivateRoute>
             <CreateTemplatePage />
@@ -315,11 +318,6 @@ const App = () => (
               <Overview />
             </PrivateRoute>
           } />
-          <Route path="templates-dashboard" element={
-          <PrivateRoute>
-            <TemplatesDashboard />
-          </PrivateRoute>
-        } />
         </Route>
       </Routes>
     </Router>
