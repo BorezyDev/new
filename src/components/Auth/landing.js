@@ -263,8 +263,8 @@ function Landing() {
 
           <div className="footer-section contact-info">
             <h3>Contact Us</h3>
-            <p>Email: support@borezy.com</p>
-            <p>Phone: +91 9764767007</p>
+            <p>Email: borezydev@gmail.com</p>
+            <p>Phone: +91 7070776622</p>
             <p>Address: Borezy, Pune, India</p>
           </div>
 
