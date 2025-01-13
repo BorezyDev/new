@@ -1,6 +1,7 @@
 
 import CreateTemplatePage from './components/UserDashboard/CreateTemplatePage';
-import TemplatesDashboard from './components/UserDashboard/TemplatesDashboard';
+import TemplatesDashboard from './components/Admin/TemplatesDashboard';
+import SCreateTemplate from './components/Admin/CreateTempS';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
@@ -51,7 +52,7 @@ import EditTemplate from './components/Profile/edittemplate';
 import Landing from './components/Auth/landing';
 
 const App = () => (
- 
+
   <UserProvider>
     <Router>
       <Routes>
@@ -60,7 +61,6 @@ const App = () => (
 
         {/* Public Route - Login Page */}
         <Route path="/Login" element={<Login />} />
-
 
         {/* Protected Routes */}
         <Route path="/dashboard" element={
@@ -87,22 +87,22 @@ const App = () => (
           </PrivateRoute>
         } />
 
-       <Route path="/branches/active" element={
+        <Route path="/branches/active" element={
           <PrivateRoute>
             <AdminDashboard />
           </PrivateRoute>
-        } /> 
-          <Route path="/branches/deactive" element={
+        } />
+        <Route path="/branches/deactive" element={
           <PrivateRoute>
             <AdminDashboard />
           </PrivateRoute>
-        } /> 
-         <Route path="/branches/expiring-soon" element={
+        } />
+        <Route path="/branches/expiring-soon" element={
           <PrivateRoute>
             <AdminDashboard />
           </PrivateRoute>
-        } /> 
-        
+        } />
+
 
 
         <Route path="/leads" element={
@@ -120,6 +120,11 @@ const App = () => (
         <Route path="/create-branch" element={
           <PrivateRoute>
             <CreateBranch />
+          </PrivateRoute>
+        } />
+        <Route path="/Screate-Template" element={
+          <PrivateRoute>
+            <SCreateTemplate />
           </PrivateRoute>
         } />
 
@@ -248,13 +253,13 @@ const App = () => (
             <BookingDashboard />
           </PrivateRoute>
         } />
-         <Route path="/usersidebar/clients" element={
+        <Route path="/usersidebar/clients" element={
           <PrivateRoute>
             <BookingDashboard />
           </PrivateRoute>
         } />
-        
-        
+
+
 
         <Route path="/usersidebar/dashboard" element={
           <PrivateRoute>
@@ -290,11 +295,7 @@ const App = () => (
             <BookingDetailsPage />
           </PrivateRoute>
         } />
-        <Route path="/templates-dashboard" element={
-          <PrivateRoute>
-            <TemplatesDashboard />
-          </PrivateRoute>
-        } />
+
         <Route path="/addtemplate" element={
           <PrivateRoute>
             <CreateTemplatePage />
@@ -316,6 +317,11 @@ const App = () => (
           <Route path="overview" element={
             <PrivateRoute>
               <Overview />
+            </PrivateRoute>
+          } />
+          <Route path="templates-dashboard" element={
+            <PrivateRoute>
+              <TemplatesDashboard />
             </PrivateRoute>
           } />
         </Route>

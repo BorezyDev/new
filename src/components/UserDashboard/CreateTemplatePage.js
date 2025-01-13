@@ -40,6 +40,9 @@ const CreateTemplate = () => {
     { label: "Receipt Number", value: "{receiptNumber}" },
     { label: "Pickup Date", value: "{pickupDate}" },
     { label: "Return Date", value: "{returnDate}" },
+    { label: "Products", value: "{Products}" },
+    { label: "Booking Creation Date", value: "{createdAt}" },
+
     
   ];
   const [branchCode, setBranchCode] = useState(''); // Store branch code

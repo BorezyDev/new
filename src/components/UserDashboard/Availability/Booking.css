@@ -1,3 +1,6 @@
+
+  
+  
 /* Container for the form group and the image */
 .booking-container1 {
   display: flex;
@@ -10,6 +13,7 @@
  }
  .product-check input {
    height: 70px;
+   
  }
  .booking-container1 h1 {
    position: absolute;
@@ -156,9 +160,9 @@
  }
  /* Image section */
  .product-image-container1{
-  margin-top: -300px;
+  margin-top: -450px;
   margin-left: 800px;
-  height: 300px;
+  height: 470px;
   width: 300px;
   
 
@@ -178,13 +182,14 @@
     background-position: center;
     box-sizing: border-box;
   }
- .product-image1{
-   margin-top: -70px;
-   width: 300px;
-
-   height: 300px;
-   border-radius: 20px;
- }
+  .product-image1 {
+    margin-top: -50px;
+    width: 300px; /* Keep the width as per your design */
+    height: 450px; /* Increase the height */
+    border-radius: 20px;
+    object-fit: cover; /* Ensure the image scales well and fills the container */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Optional: Add some shadow for better appearance */
+  }
  /* Optional: Styling the form inside the form group */
  .form-group1 form {
 
@@ -284,7 +289,7 @@
  }
  .available-quantity-display{
    margin-left: 480px;
-   margin-top: -70px;
+   margin-top: -90px;
    font-family: 'Public Sans';
    font-style: normal;
    font-weight: 600;

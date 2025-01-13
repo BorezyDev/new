@@ -41,46 +41,62 @@ const BookingDetailsPage = () => {
   const[stage,setStage]= useState('');
   useEffect(() => {
     const fetchBookingAndProductDetails = async () => {
+      setLoading(true);
       try {
         const productsCollection = collection(db, 'products');
         const productsSnapshot = await getDocs(productsCollection);
-
-        let allBookings = [];
-
-        for (const productDoc of productsSnapshot.docs) {
-          const bookingsCollection = collection(db, 'products', productDoc.id, 'bookings');
+  
+        // Prepare batched queries for all bookings
+        const bookingPromises = productsSnapshot.docs.map((productDoc) => {
+          const bookingsCollection = collection(
+            db,
+            'products',
+            productDoc.id,
+            'bookings'
+          );
           const q = query(bookingsCollection, where('receiptNumber', '==', receiptNumber));
-          const querySnapshot = await getDocs(q);
-
-          querySnapshot.docs.forEach((bookingDoc) => {
-            const bookingData = bookingDoc.data();
-            allBookings.push({ 
-              ...bookingData, 
-              id: bookingDoc.id, 
-              productId: productDoc.id,
-              product: productDoc.data()
-            });
-          });
-        }
-
+          return getDocs(q).then((querySnapshot) => ({
+            productId: productDoc.id,
+            product: productDoc.data(),
+            bookings: querySnapshot.docs.map((bookingDoc) => ({
+              ...bookingDoc.data(),
+              id: bookingDoc.id,
+            })),
+          }));
+        });
+  
+        // Execute all booking queries in parallel
+        const results = await Promise.all(bookingPromises);
+  
+        // Process bookings into a flat array
+        const allBookings = results.flatMap((result) =>
+          result.bookings.map((booking) => ({
+            ...booking,
+            productId: result.productId,
+            product: result.product,
+          }))
+        );
+  
+        // Update states with fetched data
         if (allBookings.length > 0) {
           const { userDetails } = allBookings[0]; // Assuming all bookings share the same user details
           setSecondPaymentMode(userDetails?.secondpaymentmode || '');
           setSecondPaymentDetails(userDetails?.secondpaymentdetails || '');
-          setSpecialNote(userDetails?.specialnote|| '');
-          setStage(userDetails?.stage||'');
+          setSpecialNote(userDetails?.specialnote || '');
+          setStage(userDetails?.stage || '');
         }
-
+  
         setBookings(allBookings);
       } catch (error) {
-        toast.error('Error fetching booking or product details:', error);
+        toast.error('Error fetching booking or product details:', error.message);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchBookingAndProductDetails();
   }, [receiptNumber]);
+  
 
   const handleSaveSecondPayment = async () => {
     if (bookings.length === 0) return;
@@ -254,8 +270,7 @@ const newLogEntry = {
                   <th>Quantity</th>
                   <th>Deposit</th>
                   <th>Rent</th>
-                  <th>Total Deposit</th>
-                  <th>Total Rent</th>
+                  <th> Extra Rent</th>
                   <th>Pickup Date</th>
                   <th>Return Date</th>
                   <th>Alteration</th>
@@ -274,9 +289,8 @@ const newLogEntry = {
                     </td>
                     <td>{booking.quantity || 'N/A'}</td>
                     <td>₹{booking.deposit || 'N/A'}</td>
-                    <td>₹{booking.extraRent || 'N/A'}</td>
-                    <td>₹{booking.deposit || 'N/A'}</td>
                     <td>₹{booking.price || 'N/A'}</td>
+                    <td>₹{booking.extraRent || 'N/A'}</td>
                     <td>{formatTimestamp(booking.pickupDate)}</td>
                     <td>{formatTimestamp(booking.returnDate)}</td>
                     <td>{userDetails.alterations || 'N/A'}</td>
@@ -317,7 +331,7 @@ const newLogEntry = {
           </div>
 
           <div className="client-type-container">
-          <h2>Extra Details</h2>
+          <h2>Client Type</h2>
           {isEditingSecondPayment ? (
           <div>
             <div className="info-row">

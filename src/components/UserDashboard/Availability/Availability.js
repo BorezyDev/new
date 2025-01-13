@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, setDoc,writeBatch } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import UserHeader from '../../UserDashboard/UserHeader';
@@ -56,17 +55,17 @@ const BookingDashboard = () => {
           collection(db, 'products'),
           where('branchCode', '==', userData.branchCode)
         );
+  
         const productsSnapshot = await getDocs(q);
-
-        let allBookings = [];
-
-        for (const productDoc of productsSnapshot.docs) {
+  
+        const allBookingsPromises = productsSnapshot.docs.map(async (productDoc) => {
           const productCode = productDoc.data().productCode;
           const bookingsRef = collection(productDoc.ref, 'bookings');
           const bookingsQuery = query(bookingsRef, orderBy('pickupDate', 'asc'));
           const bookingsSnapshot = await getDocs(bookingsQuery);
-
-          for (const docSnapshot of bookingsSnapshot.docs) {
+  
+          const batch = writeBatch(db); // Batch for updates
+          const productBookings = bookingsSnapshot.docs.map((docSnapshot) => {
             const bookingData = docSnapshot.data();
             const {
               bookingId,
@@ -77,7 +76,7 @@ const BookingDashboard = () => {
               userDetails,
               createdAt,
             } = bookingData;
-
+  
             const pickupDateStr =
               pickupDate && typeof pickupDate.toDate === 'function'
                 ? pickupDate.toDate().toDateString()
@@ -86,49 +85,30 @@ const BookingDashboard = () => {
               returnDate && typeof returnDate.toDate === 'function'
                 ? returnDate.toDate().toDateString()
                 : new Date(returnDate).toDateString();
-
-            // Check if pickupDate matches today's date and if stage needs to be updated
+  
             if (pickupDateStr === todayDateStr && userDetails.stage === 'Booking') {
-              await updateDoc(
-                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
-                {
-                  'userDetails.stage': 'pickupPending',
-                }
-              );
-              userDetails.stage = 'pickupPending'; // Update locally for immediate display
+              batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                'userDetails.stage': 'pickupPending',
+              });
+              userDetails.stage = 'pickupPending';
             }
+  
             if (returnDateStr === todayDateStr && userDetails.stage === 'pickup') {
-              await updateDoc(
-                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
-                {
-                  'userDetails.stage': 'returnPending',
-                }
-              );
-              userDetails.stage = 'returnPending'; // Update locally for immediate display
+              batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                'userDetails.stage': 'returnPending',
+              });
+              userDetails.stage = 'returnPending';
             }
-
-            if (returnDateStr >= todayDateStr && userDetails.stage === 'return') {
+  
+            if (returnDateStr >= todayDateStr && ['return', 'cancelled','successful'].includes(userDetails.stage)) {
               const today = new Date();
-              await updateDoc(
-                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
-                {
-                  returnDate: today, // Update return date to today
-                }
-              );
-              bookingData.returnDate = today; // Update locally for immediate display
+              batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                returnDate: today,
+              });
+              bookingData.returnDate = today;
             }
-            if (returnDateStr >= todayDateStr && userDetails.stage === 'cancelled') {
-              const today = new Date();
-              await updateDoc(
-                doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`),
-                {
-                  returnDate: today, // Update return date to today
-                }
-              );
-              bookingData.returnDate = today; // Update locally for immediate display
-            }
-
-            allBookings.push({
+  
+            return {
               bookingId,
               receiptNumber,
               clientname: userDetails.name,
@@ -146,7 +126,7 @@ const BookingDashboard = () => {
                 : null,
               createdAt: createdAt || null,
               stage: userDetails.stage,
-              products: [{ productCode, quantity: parseInt(quantity, 10) }],
+              products: [{ productCode, quantity: parseInt(quantity, 10), }],
               IdentityProof: userDetails.identityproof || 'N/A',
               IdentityNumber: userDetails.identitynumber || 'N/A',
               Source: userDetails.source || 'N/A',
@@ -168,10 +148,15 @@ const BookingDashboard = () => {
               FirstPaymentMode: userDetails.firstpaymentmode || 'N/A',
               SecondPaymentMode: userDetails.secondpaymentmode || 'N/A',
               SecondPaymentDetails: userDetails.secondpaymentdetails || 'N/A',
-            });
-          }
-        }
-
+            };
+          });
+  
+          await batch.commit(); // Commit batched updates
+          return productBookings;
+        });
+  
+        const allBookings = (await Promise.all(allBookingsPromises)).flat();
+  
         // Group bookings by receiptNumber
         const groupedBookings = allBookings.reduce((acc, booking) => {
           const { receiptNumber, products } = booking;
@@ -182,10 +167,10 @@ const BookingDashboard = () => {
           }
           return acc;
         }, {});
-
+  
         // Convert grouped bookings object to array
         let bookingsArray = Object.values(groupedBookings);
-
+  
         // Sort bookings by `createdAt` in descending order
         bookingsArray.sort((a, b) => {
           const dateA = a.createdAt
@@ -196,7 +181,7 @@ const BookingDashboard = () => {
             : new Date(0);
           return dateB - dateA; // Latest first
         });
-
+  
         setBookings(bookingsArray); // Update state with sorted bookings
       } catch (error) {
         toast.error('Error fetching bookings:', error);
@@ -204,7 +189,7 @@ const BookingDashboard = () => {
         setLoading(false); // End loading
       }
     };
-
+  
     fetchAllBookingsWithUserDetails();
   }, [userData.branchCode]);
 
@@ -495,7 +480,11 @@ const BookingDashboard = () => {
       return;
     }
 
+
     const templateBody = template.body;
+    const productsString = selectedBooking.products
+    .map(product => `${product.productCode}: ${product.quantity}`)
+    .join(", ");
 
     // Replace placeholders with booking data
     const message = templateBody
@@ -519,12 +508,14 @@ const BookingDashboard = () => {
       .replace("{FirstPaymentMode}", selectedBooking.FirstPaymentMode || "")
       .replace("{SecondPaymentMode}", selectedBooking.SecondPaymentMode || "")
       .replace("{SecondPaymentDetails}", selectedBooking.SecondPaymentDetails || "")
+      .replace("{Products}", productsString || "")
 
 
 
+      .replace("{createdAt}", selectedBooking.createdAt.toDate().toLocaleString() || "")
 
-      .replace("{pickupDate}", selectedBooking.pickupDate || "")
-      .replace("{returnDate}", selectedBooking.returnDate || "")
+      .replace("{pickupDate}", selectedBooking.pickupDate.toLocaleString() || "")
+      .replace("{returnDate}", selectedBooking.returnDate.toLocaleString() || "")
       .replace("{receiptNumber}", selectedBooking.receiptNumber || "")
       .replace("{stage}", selectedBooking.stage || "")
       .replace("{ContactNo}", selectedBooking.contactNo || "")

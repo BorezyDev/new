@@ -1,3 +1,4 @@
+
 .booking-details-container {
   background-color: #ffffff;
   border-radius: 10px;
@@ -327,5 +328,23 @@ label {
   .vaisak img,
   .print-button {
     display: none;
+  }
+}
+
+@media print {
+  .product-details-container {
+    overflow: hidden; /* Prevent scrollbars in print view */
+    page-break-inside: avoid; /* Prevent the container from breaking across pages */
+  }
+
+  .product-details-table {
+    width: 100%; /* Ensure the table fits within the container's width */
+  }
+
+  .product-details-table th,
+  .product-details-table td {
+    padding: 1px;
+    word-wrap: break-word; /* Break long words to fit inside the cell */
+    border: 1px solid #e0e0e0; /* Add borders to improve table visibility in print */
   }
 }
