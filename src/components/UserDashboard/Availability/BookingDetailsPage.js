@@ -317,7 +317,7 @@ const newLogEntry = {
           </div>
 
           <div className="client-type-container">
-          <h2>Client Type</h2>
+          <h2>Extra Details</h2>
           {isEditingSecondPayment ? (
           <div>
             <div className="info-row">

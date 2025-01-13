@@ -378,11 +378,7 @@ const ProductDashboard = () => {
                             <FaEdit style={{ color: '#757575' , cursor: 'pointer'}} />
                           </label>
                           )}
-                          {userData?.role !== 'Subuser' && (
-                          <label onClick={() => handleDelete(product.id)}>
-                            <FaTrash style={{ color: '#757575', cursor: 'pointer' }} />
-                          </label>
-                            )}
+                          
                       </div>
                     </td>
                   </tr>

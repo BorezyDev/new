@@ -59,7 +59,7 @@
 .payment-info,
 .client-type-container {
   margin-bottom: 40px;
-  padding: 20px;
+  padding: 2px;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
   background-color: #fafafa;
@@ -286,4 +286,46 @@ label {
 
 .vaisak{
   margin-left: -1000px;
+}
+@media print {
+  .activity-log-container, /* Hide activity log */
+  .vaisak,                 /* Hide back icon */
+  footer {                 /* Hide footer if present */
+    display: none;
+  }
+  header {
+    display: none;
+  }
+
+  .print-button {
+    display: none; /* Hide the print button */
+  }
+}
+
+@media print {
+  .booking-details-container {
+    margin: 0;
+    padding: 0;
+    color: black;
+    
+  }
+
+  .activity-log-container,
+  .product-details-container {
+    page-break-after: always; /* Ensures each section starts on a new page */
+    padding: 5px;
+  }
+
+  .activity-log-container:last-of-type,
+  .personal-info:last-of-type,
+  .product-details-container:last-of-type,
+  .payment-info:last-of-type {
+    page-break-after: auto; /* Prevents unnecessary blank pages */
+  }
+
+  /* Hide non-printable elements */
+  .vaisak img,
+  .print-button {
+    display: none;
+  }
 }
