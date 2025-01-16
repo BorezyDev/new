@@ -325,7 +325,7 @@ const handleDiscountChange = (e) => {
   
       const bookingsRef = collection(productRef, 'bookings');
       const qLess = query(bookingsRef, where('bookingId', '<', bookingId), orderBy('bookingId', 'asc'));
-      const qGreater = query(bookingsRef, where('bookingId', '>=', bookingId), orderBy('bookingId', 'asc'));
+      const qGreater = query(bookingsRef, where('bookingId', '>', bookingId), orderBy('bookingId', 'asc'));
   
       const querySnapshotLess = await getDocs(qLess);
       const querySnapshotGreater = await getDocs(qGreater);
@@ -1055,10 +1055,15 @@ useEffect(() => {
              />
             </div>
           </div>
+          {products.length > 1 && index > 0 && (
+                <FaTrash type="button" className='cancel-button' onClick={() => removeProductForm(index)}/>
+              )}
           <div className='total-quantity-display'>
             <p className='quantity-item1'>Total Quantity: {product.totalQuantity}</p>
             <p className='quantity-item2'>Booked Quantity: {product.totalQuantity - product.availableQuantity}</p>
           </div>
+         
+
 
           <div className="product-image-container1">
             {product.imageUrl && ( // Change from productImageUrl to product.imageUrl
@@ -1066,10 +1071,7 @@ useEffect(() => {
             )}
           </div>
          
-          {products.length > 1 && index > 0 && (
-                <FaTrash type="button" className='cancel-button' onClick={() => removeProductForm(index)}/>
-              )}
-
+          
            
               
          

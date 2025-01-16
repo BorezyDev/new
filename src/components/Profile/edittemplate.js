@@ -39,6 +39,11 @@ const EditTemplate = () => {
     { label: "Receipt Number", value: "{receiptNumber}" },
     { label: "Pickup Date", value: "{pickupDate}" },
     { label: "Return Date", value: "{returnDate}" },
+    { label: "Booking Creation Date", value: "{createdAt}" },
+    { label: "Product Code And Quantity", value: "{Products}" },
+    { label: "Product Name", value: "{Products1}" },
+
+
   ];
 
   useEffect(() => {
