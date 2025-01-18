@@ -584,7 +584,7 @@ const BookingDashboard = () => {
       <div className="dashboard-content">
         <UserHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <h2 style={{ marginLeft: '10px', marginTop: '120px' }}>
-          Total Bookings
+          Total Booking
         </h2>
         <div className="filter-container">
           <button onClick={() => setStageFilter('all')}> All ({totalBookingsCount})</button>
