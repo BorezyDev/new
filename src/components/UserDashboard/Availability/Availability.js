@@ -45,7 +45,6 @@ const BookingDashboard = () => {
   };
 
 
-
   useEffect(() => {
     const fetchAllBookingsWithUserDetails = async () => {
       setLoading(true); // Start loading
@@ -56,7 +55,7 @@ const BookingDashboard = () => {
           where('branchCode', '==', userData.branchCode)
         );
   
-        const productsSnapshot = await getDocs(q);
+        const productsSnapshot = await getDocs(query(q, where('branchCode', '==', userData.branchCode)));
   
         const allBookingsPromises = productsSnapshot.docs.map(async (productDoc) => {
           const productCode = productDoc.data().productCode;
@@ -100,13 +99,14 @@ const BookingDashboard = () => {
               userDetails.stage = 'returnPending';
             }
   
-            if (returnDateStr >= todayDateStr && ['return', 'cancelled','successful'].includes(userDetails.stage)) {
+            if (returnDateStr >= todayDateStr && ['return', 'cancelled', 'successful'].includes(userDetails.stage)) {
               const today = new Date();
               batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
                 returnDate: today,
               });
               bookingData.returnDate = today;
             }
+            const productName = productDoc.data().productName || "N/A";
   
             return {
               bookingId,
@@ -126,7 +126,9 @@ const BookingDashboard = () => {
                 : null,
               createdAt: createdAt || null,
               stage: userDetails.stage,
-              products: [{ productCode, quantity: parseInt(quantity, 10), }],
+              products: [
+                { productCode, quantity: parseInt(quantity, 10), productName }, // Ensure each product is properly formatted
+              ],
               IdentityProof: userDetails.identityproof || 'N/A',
               IdentityNumber: userDetails.identitynumber || 'N/A',
               Source: userDetails.source || 'N/A',
@@ -157,13 +159,23 @@ const BookingDashboard = () => {
   
         const allBookings = (await Promise.all(allBookingsPromises)).flat();
   
-        // Group bookings by receiptNumber
+        // Group bookings by receiptNumber, and aggregate products correctly
         const groupedBookings = allBookings.reduce((acc, booking) => {
           const { receiptNumber, products } = booking;
           if (!acc[receiptNumber]) {
             acc[receiptNumber] = { ...booking, products: [...products] };
           } else {
-            acc[receiptNumber].products.push(...products);
+            // If receiptNumber already exists, aggregate products properly
+            products.forEach((product) => {
+              const existingProduct = acc[receiptNumber].products.find(
+                (p) => p.productCode === product.productCode
+              );
+              if (existingProduct) {
+                existingProduct.quantity += product.quantity; // Aggregate quantity
+              } else {
+                acc[receiptNumber].products.push(product); // Add new product entry
+              }
+            });
           }
           return acc;
         }, {});
@@ -192,6 +204,7 @@ const BookingDashboard = () => {
   
     fetchAllBookingsWithUserDetails();
   }, [userData.branchCode]);
+  
 
 
 
@@ -472,6 +485,19 @@ const BookingDashboard = () => {
     window.open(whatsappURL, "_blank");
   };
 
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat('en-GB', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second:'2-digit',
+      hour12: true
+    }).format(date);
+  };
+  
+
 
   // Handle template click and send WhatsApp message
   const handleTemplateClick = (template) => {
@@ -483,8 +509,12 @@ const BookingDashboard = () => {
 
     const templateBody = template.body;
     const productsString = selectedBooking.products
-    .map(product => `${product.productCode}: ${product.quantity}`)
-    .join(", ");
+  .map(product => `${product.productCode} : ${product.quantity}`)
+  .join(", ");
+  const productsString1 = selectedBooking.products
+  .map(product => `${product.productName}`)
+  .join(", ");
+
 
     // Replace placeholders with booking data
     const message = templateBody
@@ -509,13 +539,13 @@ const BookingDashboard = () => {
       .replace("{SecondPaymentMode}", selectedBooking.SecondPaymentMode || "")
       .replace("{SecondPaymentDetails}", selectedBooking.SecondPaymentDetails || "")
       .replace("{Products}", productsString || "")
+      .replace("{Products1}", productsString1 || "")
 
 
+      .replace("{createdAt}", selectedBooking.createdAt ? formatDate(selectedBooking.createdAt.toDate()) : "")
+      .replace("{pickupDate}", selectedBooking.pickupDate ? formatDate(selectedBooking.pickupDate) : "")
+      .replace("{returnDate}", selectedBooking.returnDate ? formatDate(selectedBooking.returnDate) : "")
 
-      .replace("{createdAt}", selectedBooking.createdAt.toDate().toLocaleString() || "")
-
-      .replace("{pickupDate}", selectedBooking.pickupDate.toLocaleString() || "")
-      .replace("{returnDate}", selectedBooking.returnDate.toLocaleString() || "")
       .replace("{receiptNumber}", selectedBooking.receiptNumber || "")
       .replace("{stage}", selectedBooking.stage || "")
       .replace("{ContactNo}", selectedBooking.contactNo || "")
@@ -554,7 +584,7 @@ const BookingDashboard = () => {
       <div className="dashboard-content">
         <UserHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <h2 style={{ marginLeft: '10px', marginTop: '120px' }}>
-          Total Bookings
+          Total Booking
         </h2>
         <div className="filter-container">
           <button onClick={() => setStageFilter('all')}> All ({totalBookingsCount})</button>
