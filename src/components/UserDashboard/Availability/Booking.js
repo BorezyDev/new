@@ -65,7 +65,7 @@ function Booking() {
     return date.toISOString().split("T")[0] + "T15:00"; // Set default time to 3:00 PM
   };
   const getFixedTime1 = (date) => {
-    return date.toISOString().split("T")[0] + "T20:00"; // Set default time to 3:00 PM
+    return date.toISOString().split("T")[0] + "T14:00"; // Set default time to 3:00 PM
   };
 
 
@@ -260,14 +260,20 @@ function Booking() {
 
       // Check if pickupDate is greater than returnDate
       const returnDate = new Date(newProducts[index].returnDate);
-      
+      if (returnDate && selectedDate > returnDate) {
+        toast.warn("Pickup date cannot be later than return date.");
+        return;
+      }
     }
 
     // Ensure returnDate is not earlier than pickupDate
     if (field === "returnDate") {
       const pickupDate = new Date(newProducts[index].pickupDate);
 
-     
+      if (selectedDate < pickupDate) {
+        toast.warn("Return date cannot be earlier than pickup date.");
+        return;
+      }
 
       // Ensure time is set to 3:00 PM
       value = getFixedTime(selectedDate);
