@@ -71,7 +71,7 @@ function Booking() {
 
   // Number of days between pickup and return
   const [products, setProducts] = useState([
-    { pickupDate: getFixedTime(new Date()), returnDate:getFixedTime1(new Date()), productCode: '', quantity: '', availableQuantity: null, errorMessage: '', price: '', deposit: '', productName: '', },
+    { pickupDate: getFixedTime(new Date()), returnDate:'', productCode: '', quantity: '', availableQuantity: null, errorMessage: '', price: '', deposit: '', productName: '', },
   ]);
   const navigate = useNavigate();
   const toggleSidebar = () => {
@@ -276,7 +276,7 @@ function Booking() {
       }
 
       // Ensure time is set to 3:00 PM
-      value = getFixedTime(selectedDate);
+      value = getFixedTime1(selectedDate);
     }
 
     // Update the field value for the selected product
@@ -1388,7 +1388,7 @@ function Booking() {
                     <div className="payment-form-row">
                       <label>Discount on Rent</label>
                       <input
-                        type="number"
+                        type="text"
                         value={userDetails.discountOnRent}
                         onChange={(e) => setUserDetails({ ...userDetails, discountOnRent: e.target.value })}
                       />
@@ -1397,7 +1397,7 @@ function Booking() {
                     <div className="payment-form-row">
                       <label>Discount on Deposit</label>
                       <input
-                        type="number"
+                        type="text"
                         value={userDetails.discountOnDeposit}
                         onChange={(e) => setUserDetails({ ...userDetails, discountOnDeposit: e.target.value })}
                       />
@@ -1440,7 +1440,7 @@ function Booking() {
                   <div className="payment-form-row" style={{ flex: '0 0 30%', marginLeft: "70px" }}>
                     <label>Amount Paid/Advance</label>
                     <input
-                      type="number"
+                      type="text"
                       value={userDetails.amountpaid}
                       onChange={(e) => setUserDetails({ ...userDetails, amountpaid: e.target.value })}
                     />
