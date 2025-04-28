@@ -17,25 +17,38 @@ const ProductReport = () => {
   const [salesSearchTerm, setSalesSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const entriesPerPage = 50;
-
+  const entriesPerPage = 30;
+  const [productReportPage, setProductReportPage] = useState(1);
+  const [neverRentedPage, setNeverRentedPage] = useState(1);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSalesData = async () => {
-      if (userData && userData.branchCode) {
+      try {
+        if (!userData?.branchCode) return;
+
         const branchCode = userData.branchCode;
-        const productsRef = collection(db, 'products');
-        const productsQuery = query(productsRef, where('branchCode', '==', branchCode));
-        const productsSnapshot = await getDocs(productsQuery);
+        const productsRef = collection(db, `products/${branchCode}/products`);
+        const productsSnapshot = await getDocs(productsRef);
 
         const allSalesData = [];
         const uniqueProducts = new Set();
 
-        for (const productDoc of productsSnapshot.docs) {
+        const allProductDocs = productsSnapshot.docs;
+
+        // Fire all booking queries in parallel
+        const bookingPromises = allProductDocs.map(productDoc => {
+          const bookingsRef = collection(db, `products/${branchCode}/products/${productDoc.id}/bookings`);
+          return getDocs(bookingsRef);
+        });
+
+        const allBookingSnapshots = await Promise.all(bookingPromises);
+
+        for (let i = 0; i < allProductDocs.length; i++) {
+          const productDoc = allProductDocs[i];
           const productData = productDoc.data();
-          const bookingsRef = collection(db, 'products', productDoc.id, 'bookings');
-          const bookingsSnapshot = await getDocs(bookingsRef);
+          const bookingsSnapshot = allBookingSnapshots[i];
 
           uniqueProducts.add(productData.productName);
 
@@ -57,26 +70,40 @@ const ProductReport = () => {
 
         setSalesData(allSalesData);
         setAllProducts(Array.from(uniqueProducts));
+      } catch (error) {
+        console.error("Error fetching sales data:", error);
       }
     };
 
     fetchSalesData();
   }, [userData]);
 
+
+
   useEffect(() => {
     const fetchProductReportData = async () => {
-      if (userData && userData.branchCode) {
+      try {
+        if (!userData?.branchCode) return;
+
         const branchCode = userData.branchCode;
-        const productsRef = collection(db, 'products');
-        const productsQuery = query(productsRef, where('branchCode', '==', branchCode));
-        const productsSnapshot = await getDocs(productsQuery);
+        const productsRef = collection(db, `products/${branchCode}/products`);
+        const productsSnapshot = await getDocs(productsRef);
 
         const productReport = [];
 
-        for (const productDoc of productsSnapshot.docs) {
+        const allProductDocs = productsSnapshot.docs;
+
+        const bookingPromises = allProductDocs.map(productDoc => {
+          const bookingsRef = collection(db, `products/${branchCode}/products/${productDoc.id}/bookings`);
+          return getDocs(bookingsRef);
+        });
+
+        const allBookingSnapshots = await Promise.all(bookingPromises);
+
+        for (let i = 0; i < allProductDocs.length; i++) {
+          const productDoc = allProductDocs[i];
           const productData = productDoc.data();
-          const bookingsRef = collection(db, 'products', productDoc.id, 'bookings');
-          const bookingsSnapshot = await getDocs(bookingsRef);
+          const bookingsSnapshot = allBookingSnapshots[i];
 
           let totalQuantity = 0;
           let totalBooked = 0;
@@ -103,11 +130,15 @@ const ProductReport = () => {
         }
 
         setProductReportData(productReport);
+      } catch (error) {
+        console.error("Error fetching product report:", error);
       }
     };
 
     fetchProductReportData();
   }, [userData]);
+
+
 
   const filteredProductReportData = productReportData.filter((product) => {
     const productName = product.productName ? product.productName.toLowerCase() : '';
@@ -181,9 +212,9 @@ const ProductReport = () => {
 
   return (
     <div className="sales-report-container">
-      
-      
-        <div className='vaisakk' >
+
+
+      <div className='vaisakk' >
         <img
           src={backIcon}
           alt="button10"
@@ -193,35 +224,34 @@ const ProductReport = () => {
       <h2>Product Report</h2>
 
       <h3>Most Rented Products</h3>
-<table className="sales-table">
-  <thead>
-    <tr>
-      <th>SR.No</th>
-      <th>Product Code</th>
-      <th>Product Name</th>
-      <th>Total Booked</th>
-    </tr>
-  </thead>
-  <tbody>
-    {mostRentedProducts.length === 0 ? (
-      <tr>
-        <td colSpan="4">No product data found</td>
-      </tr>
-    ) : (
-      mostRentedProducts.slice(0, 5).map((product, index) => (
-        <tr key={index}>
-          <td>{index + 1}</td>
-          <td>{product.productId}</td>
-          <td>{product.productName}</td>
-          <td>{product.totalBooked}</td>
-        </tr>
-      ))
-    )}
-  </tbody>
-</table>
+      <table className="sales-table">
+        <thead>
+          <tr>
+            <th>SR.No</th>
+            <th>Product Code</th>
+            <th>Product Name</th>
+            <th>Total Booked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mostRentedProducts.length === 0 ? (
+            <tr>
+              <td colSpan="4">No product data found</td>
+            </tr>
+          ) : (
+            mostRentedProducts.slice(0, 5).map((product, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>{product.productId}</td>
+                <td>{product.productName}</td>
+                <td>{product.totalBooked}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
 
       <hr className="table-divider" />
-
       <h3>Never Rented Products</h3>
       <table className="sales-table">
         <thead>
@@ -237,16 +267,33 @@ const ProductReport = () => {
               <td colSpan="3">No product data found</td>
             </tr>
           ) : (
-            neverRentedProducts.map((product, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{product.productId}</td>
-                <td>{product.productName}</td>
-              </tr>
-            ))
+            neverRentedProducts
+              .slice((neverRentedPage - 1) * entriesPerPage, neverRentedPage * entriesPerPage)
+              .map((product, index) => (
+                <tr key={index}>
+                  <td>{(neverRentedPage - 1) * entriesPerPage + index + 1}</td>
+                  <td>{product.productId}</td>
+                  <td>{product.productName}</td>
+                </tr>
+              ))
           )}
         </tbody>
       </table>
+      {neverRentedProducts.length > entriesPerPage && (
+        <div className="pagination">
+          {Array.from({ length: Math.ceil(neverRentedProducts.length / entriesPerPage) }, (_, index) => (
+            <button
+              key={index}
+              onClick={() => setNeverRentedPage(index + 1)}
+              className={neverRentedPage === index + 1 ? 'active' : ''}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+      )}
+
+
       <hr className="table-divider" />
 
       <h3>Daily Sales</h3>
@@ -279,111 +326,127 @@ const ProductReport = () => {
       </div>
 
       <table className="sales-table">
-  <thead>
-    <tr>
-      <th>Sr.No</th>
-      <th>Product Code</th>
-      <th>Product Name</th>
-      <th>Pickup Date</th>
-      <th>Quantity</th>
-      <th>Price</th>
-      <th>Deposit</th>
-    </tr>
-  </thead>
-  <tbody>
-    {filteredSalesData.length === 0 ? (
-      <tr>
-        <td colSpan="7">No sales data found</td>
-      </tr>
-    ) : (
-      filteredSalesData
-        .slice(indexOfFirstEntry, indexOfLastEntry)
-        .map((sale, index) => (
-          <tr key={index}>
-            <td>{index + 1}</td>
-            <td>{sale.productId}</td>
-            <td>{sale.productName}</td>
-            <td>{sale.pickupDate?.toDateString() || ''}</td>
-            <td>{sale.quantity}</td>
-            <td>{sale.price.toFixed(2)}</td>
-            <td>{sale.deposit.toFixed(2)}</td>
-          </tr>
-        ))
-    )}
-    
-    {/* Total Row */}
-    {filteredSalesData.length > 0 && (
-      <tr className="total-row">
-        <td colSpan="4" style={{ textAlign: 'right' }}>Total:</td>
-        <td>
-          {filteredSalesData.reduce((total, sale) => total + sale.quantity, 0)}
-        </td>
-        <td>
-          {filteredSalesData.reduce((total, sale) => total + sale.price, 0).toFixed(2)}
-        </td>
-        <td>
-          {filteredSalesData.reduce((total, sale) => total + sale.deposit, 0).toFixed(2)}
-        </td>
-      </tr>
-    )}
-  </tbody>
-</table>
-<div className="pagination">
-  {Array.from({ length: totalPages }, (_, index) => (
-    <button
-      key={index}
-      onClick={() => setCurrentPage(index + 1)}
-      className={currentPage === index + 1 ? 'active' : ''}
-    >
-      {index + 1}
-    </button>
-  ))}
-</div>
-
-<hr className="table-divider" />
-      <h3>Total Product Report</h3>
-      <div className="search-filters">
-          <input
-            type="text"
-            placeholder="Search"
-            value={salesSearchTerm}
-            onChange={(e) => setSalesSearchTerm(e.target.value)}
-          />
-        </div>
-      <table className="sales-table">
         <thead>
           <tr>
             <th>Sr.No</th>
             <th>Product Code</th>
             <th>Product Name</th>
-            <th>Brand Name</th>
-            <th>Total Booked</th>
-            <th>Total Quantity</th>
-            <th>Total Price</th>
-            <th>Total Deposit</th>
+            <th>Pickup Date</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Deposit</th>
           </tr>
         </thead>
         <tbody>
-          {filteredProductReportData.length === 0 ? (
+          {filteredSalesData.length === 0 ? (
             <tr>
-              <td colSpan="6">No product report data found</td>
+              <td colSpan="7">No sales data found</td>
             </tr>
           ) : (
-            filteredProductReportData.map((product, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{product.productId}</td>
-                <td>{product.productName}</td>
-                <td>{product.brandName}</td>
-                <td>{product.totalBooked}</td>
-                <td>{product.totalQuantity}</td>
-                <td>{product.totalPrice.toFixed(2)}</td>
-                <td>{product.totalDeposit.toFixed(2)}</td>
-              </tr>
-            ))
+            filteredSalesData
+              .slice(indexOfFirstEntry, indexOfLastEntry)
+              .map((sale, index) => (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+                  <td>{sale.productId}</td>
+                  <td>{sale.productName}</td>
+                  <td>{sale.pickupDate?.toDateString() || ''}</td>
+                  <td>{sale.quantity}</td>
+                  <td>{sale.price.toFixed(2)}</td>
+                  <td>{sale.deposit.toFixed(2)}</td>
+                </tr>
+              ))
+          )}
+
+          {/* Total Row */}
+          {filteredSalesData.length > 0 && (
+            <tr className="total-row">
+              <td colSpan="4" style={{ textAlign: 'right' }}>Total:</td>
+              <td>
+                {filteredSalesData.reduce((total, sale) => total + sale.quantity, 0)}
+              </td>
+              <td>
+                {filteredSalesData.reduce((total, sale) => total + sale.price, 0).toFixed(2)}
+              </td>
+              <td>
+                {filteredSalesData.reduce((total, sale) => total + sale.deposit, 0).toFixed(2)}
+              </td>
+            </tr>
           )}
         </tbody>
       </table>
+      <div className="pagination">
+        {Array.from({ length: totalPages }, (_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            className={currentPage === index + 1 ? 'active' : ''}
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
+
+      <hr className="table-divider" />
+      <h3>Total Product Report</h3>
+<div className="search-filters">
+  <input
+    type="text"
+    placeholder="Search"
+    value={productSearchTerm}
+    onChange={(e) => setProductSearchTerm(e.target.value)}
+  />
+</div>
+<table className="sales-table">
+  <thead>
+    <tr>
+      <th>Sr.No</th>
+      <th>Product Code</th>
+      <th>Product Name</th>
+      <th>Brand Name</th>
+      <th>Total Booked</th>
+      <th>Total Quantity</th>
+      <th>Total Price</th>
+      <th>Total Deposit</th>
+    </tr>
+  </thead>
+  <tbody>
+    {filteredProductReportData.length === 0 ? (
+      <tr>
+        <td colSpan="8">No product report data found</td>
+      </tr>
+    ) : (
+      filteredProductReportData
+        .slice((productReportPage - 1) * entriesPerPage, productReportPage * entriesPerPage)
+        .map((product, index) => (
+          <tr key={index}>
+            <td>{(productReportPage - 1) * entriesPerPage + index + 1}</td>
+            <td>{product.productId}</td>
+            <td>{product.productName}</td>
+            <td>{product.brandName}</td>
+            <td>{product.totalBooked}</td>
+            <td>{product.totalQuantity}</td>
+            <td>{product.totalPrice.toFixed(2)}</td>
+            <td>{product.totalDeposit.toFixed(2)}</td>
+          </tr>
+        ))
+    )}
+  </tbody>
+</table>
+{filteredProductReportData.length > entriesPerPage && (
+  <div className="pagination">
+    {Array.from({ length: Math.ceil(filteredProductReportData.length / entriesPerPage) }, (_, index) => (
+      <button
+        key={index}
+        onClick={() => setProductReportPage(index + 1)}
+        className={productReportPage === index + 1 ? 'active' : ''}
+      >
+        {index + 1}
+      </button>
+    ))}
+  </div>
+)}
+
     </div>
   );
 };

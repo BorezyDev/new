@@ -27,18 +27,17 @@ const UserDashboard = () => {
   useEffect(() => {
     const fetchUsersAndBranchData = async () => {
       try {
-        const q = query(
-          collection(db, 'subusers'),
-          where('branchCode', '==', userData.branchCode)
-        );
-        const querySnapshot = await getDocs(q);
+        const subusersRef = collection(db, `products/${userData.branchCode}/subusers`);
+        const querySnapshot = await getDocs(subusersRef);
+  
         const fetchedUsers = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         setUsers(fetchedUsers);
         setOriginalUsers(fetchedUsers);
-
+  
+        // Fetch total number of users allowed from 'branches' collection
         const branchRef = doc(db, 'branches', userData.branchCode);
         const branchSnap = await getDoc(branchRef);
         if (branchSnap.exists()) {
@@ -53,38 +52,40 @@ const UserDashboard = () => {
         setLoading(false);
       }
     };
-
-    fetchUsersAndBranchData();
+  
+    if (userData?.branchCode) {
+      fetchUsersAndBranchData();
+    }
   }, [userData]);
 
+  
   const handleDelete = async (id) => {
     try {
-      const userDocRef = doc(db, 'subusers', id);
+      const userDocRef = doc(db, `products/${userData.branchCode}/subusers/${id}`);
       const userDocSnap = await getDoc(userDocRef);
+  
       if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        const branchCode = userData.branchCode;
-
+        // Delete user document
         await deleteDoc(userDocRef);
-
-        const branchRef = doc(db, 'branches', branchCode);
+  
+        // Increment available user slots in the branch
+        const branchRef = doc(db, 'branches', userData.branchCode);
         const branchSnap = await getDoc(branchRef);
         if (branchSnap.exists()) {
           const branchData = branchSnap.data();
           const currentUsers = branchData.numberOfUsers || 0;
-
-          // Decrease the number of users after deleting a user
+  
           await updateDoc(branchRef, {
             numberOfUsers: currentUsers + 1,
           });
-
           console.log('Branch user count updated.');
         } else {
-          console.error('Branch not found. Branch Code:', branchCode);
+          console.error('Branch not found. Branch Code:', userData.branchCode);
         }
-
+  
+        // Remove from local state
         setUsers(users.filter((user) => user.id !== id));
-        setTotalUsers(totalUsers + 1); // Decrement total users
+        setTotalUsers((prev) => prev + 1);
       } else {
         console.error('User not found. ID:', id);
       }
@@ -92,7 +93,7 @@ const UserDashboard = () => {
       console.error('Error deleting user:', error);
     }
   };
-
+  
   const handleEdit = (id) => {
     navigate(`/edituser/${id}`);
   };

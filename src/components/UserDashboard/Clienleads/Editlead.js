@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './Cleads.css';
 import UserHeader from '../../UserDashboard/UserHeader';
 import UserSidebar from '../../UserDashboard/UserSidebar';
+import { useUser } from '../../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
 
 
 const EditCLead = () => {
@@ -23,6 +24,7 @@ const EditCLead = () => {
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+const { userData } = useUser(); // Get user data from context
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -31,40 +33,51 @@ const EditCLead = () => {
 
 const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchLead = async () => {
-      const leadDocRef = doc(db, 'clientleads', id);
+useEffect(() => {
+  const fetchLead = async () => {
+    if (!userData?.branchCode || !id) return; // Ensure branchCode & id exist
+
+    try {
+      const leadDocRef = doc(db, `products/${userData.branchCode}/clientleads`, id);
       const leadDoc = await getDoc(leadDocRef);
 
       if (leadDoc.exists()) {
-        setFormData({ id, ...leadDoc.data() }); // Set form data with the lead data
+        setFormData({ id, ...leadDoc.data() }); // Set form data with lead data
       } else {
         toast.error('Lead not found.');
       }
-    };
-
-    fetchLead();
-  }, [id]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevState) => ({ ...prevState, [name]: value }));
-  };
-
-  const handleUpdateClientLead = async (e) => {
-    e.preventDefault();
-
-    try {
-      const leadDocRef = doc(db, 'clientleads', id);
-      await updateDoc(leadDocRef, formData);
-      toast.success('Client lead updated successfully.');
-      setTimeout(() => {
-        navigate('/usersidebar/leads'); // Navigate back to the leads dashboard
-      }, 1500);
     } catch (error) {
-      toast.error('Failed to update client lead. Please try again.');
+      console.error('Error fetching lead:', error);
+      toast.error('Failed to fetch lead details.');
     }
   };
+
+  fetchLead();
+}, [userData?.branchCode, id]); // Ensure effect re-runs when branchCode or id changes
+
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  setFormData((prevState) => ({ ...prevState, [name]: value }));
+};
+
+const handleUpdateClientLead = async (e) => {
+  e.preventDefault();
+
+  if (!userData?.branchCode || !id) return; // Ensure valid branchCode & id
+
+  try {
+    const leadDocRef = doc(db, `products/${userData.branchCode}/clientleads`, id);
+    await updateDoc(leadDocRef, formData);
+
+    toast.success('Client lead updated successfully.');
+    setTimeout(() => {
+      navigate('/usersidebar/leads'); // Navigate back to the leads dashboard
+    }, 1500);
+  } catch (error) {
+    console.error('Error updating lead:', error);
+    toast.error('Failed to update client lead. Please try again.');
+  }
+};
 
   return (
     <div className={`add-lead-container ${sidebarOpen ? 'sidebar-open' : ''}`}>

@@ -5,6 +5,7 @@ import { db } from '../../firebaseConfig';
 import { sendEmail } from '../../utils/sendEmail';
 import { useNavigate } from 'react-router-dom';
 import './CreateSuperAdmin.css';
+import { useUser } from '../Auth/UserContext';
 
 const CreateSuperAdmin = () => {
   const [formData, setFormData] = useState({

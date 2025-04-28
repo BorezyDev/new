@@ -35,10 +35,13 @@ function EditProduct() {
     if (userData && userData.branchCode) {
       setBranchCode(userData.branchCode);
     }
-
+  
     const fetchProductData = async () => {
-      const productRef = doc(db, 'products', productCode);
+      if (!userData?.branchCode || !productCode) return;
+  
+      const productRef = doc(db, `products/${userData.branchCode}/products`, productCode);
       const productDoc = await getDoc(productRef);
+      
       if (productDoc.exists()) {
         const productData = productDoc.data();
         setProductName(productData.productName);
@@ -50,7 +53,7 @@ function EditProduct() {
         setMinimumRentalPeriod(productData.minimumRentalPeriod);
         setExtraRent(productData.extraRent);
         setPriceType(productData.priceType);
-
+  
         // Load existing images as preview
         if (productData.imageUrls) {
           const existingImages = productData.imageUrls.map((url) => ({
@@ -61,56 +64,56 @@ function EditProduct() {
         setCustomFieldValues(productData.customFields || {});
       }
     };
-
+  
     fetchProductData();
   }, [productCode, userData]);
-
+  
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-
+  
     // Limit to 2 images
     if (images.length + files.length <= 2) {
       const newImages = files.map((file) => ({
         file,
         preview: URL.createObjectURL(file), // Create local preview for new images
       }));
-
+  
       // Add new images without removing existing image URLs
       setImages((prevImages) => [...prevImages, ...newImages]);
     } else {
       toast.warn('You can upload a maximum of 2 images.');
     }
   };
-
+  
   const handleImageClick = () => {
     if (imageInputRef.current) {
       imageInputRef.current.click();
     }
   };
-
+  
   const handleImageRemove = (index) => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       const storage = getStorage();
       const uploadedImageUrls = [];
-
+  
       // Upload new files to Firebase Storage
       for (const image of images) {
         if (image.file) {
-          const storageRef = ref(storage, `products/${image.file.name}`);
+          const storageRef = ref(storage, `products/${branchCode}/${image.file.name}`);
           await uploadBytes(storageRef, image.file);
           const imageUrl = await getDownloadURL(storageRef);
           uploadedImageUrls.push(imageUrl);
         } else {
-          uploadedImageUrls.push(image.preview);
+          uploadedImageUrls.push(image.preview); // Retain existing images
         }
       }
-
+  
       const productData = {
         productName,
         productCode,
@@ -126,10 +129,10 @@ function EditProduct() {
         extraRent: parseInt(extraRent, 10),
         minimumRentalPeriod: parseInt(minimumRentalPeriod, 10),
       };
-
-      const productRef = doc(db, 'products', productCode);
+  
+      const productRef = doc(db, `products/${branchCode}/products`, productCode);
       await setDoc(productRef, productData);
-
+  
       toast.success('Product updated successfully!');
       setTimeout(() => navigate('/productdashboard'), 5000);
     } catch (error) {
@@ -137,11 +140,11 @@ function EditProduct() {
       toast.error('Failed to update product');
     }
   };
-
+  
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
+  
   return (
     <div className={`add-product-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <UserSidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />

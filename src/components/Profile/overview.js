@@ -22,11 +22,10 @@ const SingleComponent = () => {
   // Fetch templates from Firestore
   const fetchTemplates = async () => {
     try {
-      const q = query(
-        collection(db, "templates"),
-        where('branchCode', '==', userData.branchCode)
-      );
-      const querySnapshot = await getDocs(q);
+      if (!userData?.branchCode) return;
+  
+      const templatesRef = collection(db, `products/${userData.branchCode}/templates`);
+      const querySnapshot = await getDocs(templatesRef);
       const templatesData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -40,23 +39,26 @@ const SingleComponent = () => {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchTemplates();
-  }, []);
+  }, [userData?.branchCode]);
+
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this template?");
     if (confirmDelete) {
       try {
-        const templateDocRef = doc(db, "templates", id);
+        const templateDocRef = doc(db, `products/${userData.branchCode}/templates`, id);
         await deleteDoc(templateDocRef);
-        setTemplates(templates.filter((template) => template.id !== id));
+        setTemplates((prevTemplates) => prevTemplates.filter((template) => template.id !== id));
       } catch (error) {
         console.error("Error deleting template:", error);
+        toast.error("Failed to delete template.");
       }
     }
   };
+  
 
   const handleEdit = (id) => {
     navigate(`/edittemplate/${id}`);

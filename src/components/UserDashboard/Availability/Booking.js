@@ -8,10 +8,10 @@ import UserSidebar from '../../UserDashboard/UserSidebar';
 import { useUser } from '../../Auth/UserContext';
 import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
 import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
-
 import { FaSearch, FaDownload, FaUpload, FaPlus, FaEdit, FaTrash, FaCopy } from 'react-icons/fa';
 import "../Availability/Booking.css"
 function Booking() {
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const [productCode, setProductCode] = useState('');
   const [pickupDate, setPickupDate] = useState('');
@@ -71,7 +71,7 @@ function Booking() {
 
   // Number of days between pickup and return
   const [products, setProducts] = useState([
-    { pickupDate: getFixedTime(new Date()), returnDate:'', productCode: '', quantity: '', availableQuantity: null, errorMessage: '', price: '', deposit: '', productName: '', },
+    { pickupDate: getFixedTime(new Date()), returnDate: '', productCode: '', quantity: '', availableQuantity: null, errorMessage: '', price: '', deposit: '', productName: '', },
   ]);
   const navigate = useNavigate();
   const toggleSidebar = () => {
@@ -102,13 +102,14 @@ function Booking() {
   // Fetch product suggestions based on the entered product code
   const fetchProductSuggestions = async (searchTerm) => {
     try {
-      // Fetch all products for the logged-in branch code
       setLoggedInBranchCode(userData.branchCode);
 
-      const productsRef = collection(db, 'products');
+      // Query the new Firestore structure for products under the respective branchCode
+      const productsRef = collection(db, `products/${loggedInBranchCode}/products`);
       const q = query(
         productsRef,
-        where('branchCode', '==', loggedInBranchCode) // Filter by branchCode
+        where('productCode', '>=', searchTerm), // Assuming you want to search for product codes starting with searchTerm
+        where('productCode', '<=', searchTerm + '\uf8ff') // For prefix-based search
       );
 
       const querySnapshot = await getDocs(q);
@@ -129,7 +130,6 @@ function Booking() {
       if (suggestions.length === 0) {
         console.log('No products found for the logged-in branch');
       }
-
     } catch (error) {
       console.error('Error fetching product suggestions:', error);
     }
@@ -138,10 +138,11 @@ function Booking() {
   // Fetch product details when a product code is entered or selected
   const fetchProductDetails = async (productCode, index) => {
     try {
-      const productRef = doc(db, 'products', productCode);
-      const productDoc = await getDoc(productRef);
-
       setLoggedInBranchCode(userData.branchCode);
+
+      // Query the new Firestore structure for the product under the respective branchCode
+      const productRef = doc(db, `products/${loggedInBranchCode}/products`, productCode);
+      const productDoc = await getDoc(productRef);
 
       if (productDoc.exists()) {
         const productData = productDoc.data();
@@ -210,33 +211,32 @@ function Booking() {
     fetchProductDetails(suggestion.productCode, index);
   };
 
-
-
   // Function to fetch product image, price, and deposit based on productCode
 
   const generateReceiptNumber = async (branchCode) => {
-    // Define the path where the receipt number counter is stored for a specific branch
-    const receiptCounterRef = doc(db, 'branchCounters', branchCode); // Store each branch's receipt counter in a 'branchCounters' collection
+    // New path inside products/{branchCode}/branchCounters/receipt
+    const receiptCounterRef = doc(db, `products/${branchCode}/branchCounters/receipt`);
 
-    // Fetch the current receipt number counter for the branch
+    // Fetch the current receipt number counter
     const receiptCounterDoc = await getDoc(receiptCounterRef);
 
     let receiptNumber = 1; // Default to 1 if no counter exists
 
     if (receiptCounterDoc.exists()) {
       const data = receiptCounterDoc.data();
-      receiptNumber = data.currentValue + 1; // Increment the counter for the branch
+      receiptNumber = data.currentValue + 1; // Increment the counter
     }
 
-    // Update the counter in Firestore for the branch
+    // Update the counter in Firestore
     await setDoc(receiptCounterRef, { currentValue: receiptNumber });
 
-    // Format the receipt number (e.g., add leading zeros and branch code)
-    return `${branchCode}-REC-${String(receiptNumber).padStart(6, '0')}`; // e.g., BR001-REC-000001
+    // Format the receipt number
+    return `${branchCode}-REC-${String(receiptNumber).padStart(6, '0')}`;
   };
 
 
- 
+
+
 
 
 
@@ -297,7 +297,6 @@ function Booking() {
 
   // Function to handle product input changes
 
-
   const checkAvailability = async (index) => {
     const { productCode, pickupDate, returnDate, quantity } = products[index];
     const pickupDateObj = new Date(pickupDate);
@@ -309,7 +308,8 @@ function Booking() {
     console.log('Booking ID:', bookingId);
 
     try {
-      const productRef = doc(db, 'products', productCode);
+      // Fetch product from the correct branch subcollection
+      const productRef = doc(db, `products/${userData.branchCode}/products`, productCode); // Change here for branchCode
       const productDoc = await getDoc(productRef);
 
       if (!productDoc.exists()) {
@@ -325,6 +325,7 @@ function Booking() {
 
       console.log('Max Available Quantity for Product:', productCode, 'is', maxAvailableQuantity);
 
+      // Fetch the bookings for the specific product under the branch
       const bookingsRef = collection(productRef, 'bookings');
       const qLess = query(bookingsRef, where('bookingId', '<', bookingId), orderBy('bookingId', 'asc'));
       const qGreater = query(bookingsRef, where('bookingId', '>', bookingId), orderBy('bookingId', 'asc'));
@@ -400,7 +401,6 @@ function Booking() {
         let totalOverlapQuantity1 = 0;
         let totalOverlapQuantity2 = 0;
 
-
         if (lessOverlapBookings.length > 0) {
           totalOverlapQuantity1 += lessOverlapBookings.reduce((sum, booking) => sum + booking.quantity, 0);
           console.log('Overlapping Booking (Less):', totalOverlapQuantity1);
@@ -439,25 +439,23 @@ function Booking() {
 
   const addProductForm = () => {
     if (products.length > 0) {
-        const firstProduct = products[0]; // Get first product's pickup and return date
-        setProducts([...products, { 
-            pickupDate: firstProduct.pickupDate, 
-            returnDate: firstProduct.returnDate, 
-            productCode: '', 
-            quantity: '', 
-            availableQuantity: null, 
-            errorMessage: '', 
-            productImageUrl: '', 
-            productName: '', 
-        }]);
+      const firstProduct = products[0]; // Get first product's pickup and return date
+      setProducts([...products, {
+        pickupDate: firstProduct.pickupDate,
+        returnDate: firstProduct.returnDate,
+        productCode: '',
+        quantity: '',
+        availableQuantity: null,
+        errorMessage: '',
+        productImageUrl: '',
+        productName: '',
+      }]);
     }
-};
+  };
   const removeProductForm = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
     setProducts(updatedProducts);
   };
-
-
 
 
 
@@ -468,8 +466,11 @@ function Booking() {
         throw new Error('Invalid product code');
       }
 
-      // Firestore reference to the specific product's bookings
-      const productRef = doc(db, 'products', productCode);
+      // Fetch the logged-in branchCode from user data
+      const branchCode = userData.branchCode; // Assuming userData contains branchCode
+
+      // Firestore reference to the specific product's bookings under the correct branch
+      const productRef = doc(db, `products/${branchCode}/products`, productCode); // Updated reference
       const bookingsRef = collection(productRef, 'bookings');
       const q = query(bookingsRef, orderBy('pickupDate', 'asc'));
 
@@ -486,9 +487,6 @@ function Booking() {
           pickupDate: bookingData.pickupDate.toDate(),
           returnDate: bookingData.returnDate.toDate(),
           quantity: bookingData.quantity,
-
-
-
         });
       });
 
@@ -527,10 +525,6 @@ function Booking() {
 
 
 
-
-
-
-
   const handleBookingConfirmation = async (e) => {
     e.preventDefault();
 
@@ -544,7 +538,11 @@ function Booking() {
         const millisecondsPerDay = 1000 * 60 * 60 * 24;
         const days = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
 
-        const productRef = doc(db, 'products', product.productCode);
+        // Get branchCode from userData (assumed to be available)
+        const branchCode = userData.branchCode;
+
+        // Reference to the specific product in the branch's collection
+        const productRef = doc(db, `products/${branchCode}/products`, product.productCode); // Updated path
         const productDoc = await getDoc(productRef);
 
         if (!productDoc.exists()) {
@@ -554,6 +552,7 @@ function Booking() {
 
         const productData = productDoc.data();
         const { price, deposit, priceType, minimumRentalPeriod, extraRent, productName } = productData;
+
         const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate, minimumRentalPeriod, extraRent) => {
           const pickupDateObj = new Date(pickupDate);
           const returnDateObj = new Date(returnDate);
@@ -564,14 +563,11 @@ function Booking() {
 
           // Determine the duration based on priceType
           if (priceType === 'hourly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour);
-            // Hours difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); // Hours difference
           } else if (priceType === 'monthly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30));
-            // Months difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); // Months difference
           } else {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
-
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Days difference
           }
 
           let totalPrice = 0;
@@ -585,16 +581,12 @@ function Booking() {
             totalPrice = price * quantity;
 
             // Apply extra rent for the remaining duration beyond the minimum rental period
-
             totalPrice += extraRent * extraDuration * quantity;
           }
-
-
 
           let totaldeposite = deposit * quantity;
           console.log("Price Type: ", priceType);
           console.log("Duration: ", duration);
-
           console.log("Extra Days/Hours: ", extraDuration);
           console.log("Price per unit: ", price);
           console.log("Extra Price per additional duration: ", extraRent);
@@ -605,9 +597,9 @@ function Booking() {
             deposit,
             totaldeposite,
             grandTotal: `${parseInt(totalPrice) + parseInt(totaldeposite)}`,
-
           };
         };
+
         const totalCost = calculateTotalPrice(
           price,
           deposit,
@@ -618,9 +610,6 @@ function Booking() {
           minimumRentalPeriod,
           extraRent,
         );
-
-
-
 
         const newBookingId = await getNextBookingId(pickupDateObj, product.productCode);
 
@@ -638,8 +627,6 @@ function Booking() {
         });
 
         // Save booking details to Firestore
-
-
         bookingDetails.push({
           productCode: product.productCode,
           productImageUrl: product.imageUrl,
@@ -665,17 +652,19 @@ function Booking() {
   };
 
 
-
-
-
   const handleConfirmPayment = async () => {
+    setIsButtonDisabled(true);
     try {
-      const receiptNumber =
-        await generateReceiptNumber(userData.branchCode);
+
+      // Generate receipt number
+      const receiptNumber = await generateReceiptNumber(userData.branchCode);
       setReceiptNumber(receiptNumber);
+
+      // Check availability of stock for all products
       const allQuantitiesAvailable = await Promise.all(
         products.map(async (product) => {
-          const productRef = doc(db, 'products', product.productCode);
+          const branchCode = userData.branchCode;
+          const productRef = doc(db, `products/${branchCode}/products`, product.productCode); // Updated path
           const productDoc = await getDoc(productRef);
 
           if (!productDoc.exists()) {
@@ -711,22 +700,24 @@ function Booking() {
         return; // Exit the function without proceeding with booking
       }
 
-
-      // Check if all products have sufficient stock
-
+      // Process each product for booking
       for (const product of products) {
         const pickupDateObj = new Date(product.pickupDate);
         const returnDateObj = new Date(product.returnDate);
-        const productRef = doc(db, 'products', product.productCode);
 
+        const branchCode = userData.branchCode;
+        const productRef = doc(db, `products/${branchCode}/products`, product.productCode); // Updated path
         const productDoc = await getDoc(productRef);
 
         if (!productDoc.exists()) {
           product.errorMessage = 'Product not found.';
           continue; // Skip this product if not found
         }
+
         const productData = productDoc.data();
         const { price, deposit, priceType, minimumRentalPeriod, extraRent } = productData;
+
+        // Calculate the total price
         const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate, minimumRentalPeriod, extraRent) => {
           const pickupDateObj = new Date(pickupDate);
           const returnDateObj = new Date(returnDate);
@@ -737,14 +728,11 @@ function Booking() {
 
           // Determine the duration based on priceType
           if (priceType === 'hourly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour);
-            // Hours difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); // Hours difference
           } else if (priceType === 'monthly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30));
-            // Months difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); // Months difference
           } else {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
-
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Days difference
           }
 
           let totalPrice = 0;
@@ -758,16 +746,12 @@ function Booking() {
             totalPrice = price * quantity;
 
             // Apply extra rent for the remaining duration beyond the minimum rental period
-
             totalPrice += extraRent * extraDuration * quantity;
           }
-
-
 
           let totaldeposite = deposit * quantity;
           console.log("Price Type: ", priceType);
           console.log("Duration: ", duration);
-
           console.log("Extra Days/Hours: ", extraDuration);
           console.log("Price per unit: ", price);
           console.log("Extra Price per additional duration: ", extraRent);
@@ -778,9 +762,9 @@ function Booking() {
             deposit,
             totaldeposite,
             grandTotal: `${parseInt(totalPrice) + parseInt(totaldeposite)}`,
-
           };
         };
+
         const totalCost = calculateTotalPrice(
           price,
           deposit,
@@ -792,15 +776,10 @@ function Booking() {
           extraRent,
         );
 
-
-
-
-
-
-
         const newBookingId = await getNextBookingId(pickupDateObj, product.productCode);
-        // Ensure receipt.products is an array
         const createdAt = new Date();
+
+        // Add booking to Firestore under the specific branch and product
         await addDoc(collection(productRef, 'bookings'), {
           bookingId: newBookingId,
           receiptNumber,
@@ -812,28 +791,24 @@ function Booking() {
           deposit,
           priceType,
           minimumRentalPeriod,
-
-
           extraRent,
-
-          // Save deposit
           totalCost: totalCost.totalPrice,
-          createdAt, // Save total price
+          createdAt, // Save creation timestamp
         });
       }
 
-
-
-
-      // Iterate through each product and validate its details
-
-
+      // Set payment confirmation state and redirect
       setIsPaymentConfirmed(true);
       toast.success(`Bill Created Successfully. Your Receipt Number is: ${receiptNumber}`);
-      setTimeout(() => navigate('/usersidebar/clients'), 6000); // 2 seconds delay
+      setTimeout(() => navigate('/usersidebar/clients'), 6000); // 6 seconds delay before navigation
+
     } catch (error) {
       toast.error('Error confirming payment:', error);
       setErrorMessage(error.message);
+    }
+    finally {
+      // Re-enable the button after 10 seconds
+      setTimeout(() => setIsButtonDisabled(false), 10000);
     }
   };
 
@@ -931,17 +906,16 @@ function Booking() {
 
   useEffect(() => {
     const fetchSubUsers = async () => {
-      try {
-        const q = query(collection(db, 'subusers'), where('branchCode', '==', userData.branchCode));
-        const querySnapshot = await getDocs(q);
+      if (!userData.branchCode) return;
 
-        const subUsersData = [];
-        querySnapshot.forEach((doc) => {
-          subUsersData.push({
-            id: doc.id,
-            ...doc.data()
-          });
-        });
+      try {
+        const subUsersRef = collection(db, `products/${userData.branchCode}/subusers`);
+        const querySnapshot = await getDocs(subUsersRef);
+
+        const subUsersData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
         setSubUsers(subUsersData); // Assuming you have a state called subUsers
       } catch (error) {
@@ -951,7 +925,6 @@ function Booking() {
 
     fetchSubUsers();
   }, [userData.branchCode]);
-
 
 
   // Handle the selection of a sub-user
@@ -985,7 +958,7 @@ function Booking() {
                       value={product.pickupDate}
                       onChange={(e) => handleFirstProductDateChange(e, "pickupDate", index)}
                       min={getFixedTime(new Date())} // Ensures a minimum valid date
-                      disabled={index > 0} 
+                      disabled={index > 0}
                       required
                     />
                   </div>
@@ -997,7 +970,7 @@ function Booking() {
                       name="returnDate"
                       value={product.returnDate}
                       onChange={(e) => handleFirstProductDateChange(e, "returnDate", index)}
-                      disabled={index > 0} 
+                      disabled={index > 0}
                       required
                     />
                   </div>
@@ -1082,12 +1055,12 @@ function Booking() {
                     product.availableQuantity !== null && (
                       <>
 
-<p className='quantity-item2'>Booked Quantity: {product.totalQuantity - product.availableQuantity}</p>
-</>
+                        <p className='quantity-item2'>Booked Quantity: {product.totalQuantity - product.availableQuantity}</p>
+                      </>
                     )
                   )}
                 </div>
-               
+
 
 
 
@@ -1536,8 +1509,12 @@ function Booking() {
 
                 {/* Add more fields as needed */}
 
-                <button onClick={handleConfirmPayment} className="submit-payment-button">
-                  Confirm Payment
+                <button
+                  onClick={handleConfirmPayment}
+                  className="submit-payment-button"
+                  disabled={isButtonDisabled}
+                >
+                  {isButtonDisabled ? 'Processing...' : 'Confirm Payment'}
                 </button>
               </div>
             )}

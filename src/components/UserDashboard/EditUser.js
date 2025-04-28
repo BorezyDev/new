@@ -5,6 +5,7 @@ import { db } from '../../firebaseConfig'; // Firebase config import
 import './EditUser.css';
 import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
 import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
+import { useUser } from '../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
 
 const EditUser = () => {
   const { id } = useParams();
@@ -12,11 +13,12 @@ const EditUser = () => {
   const [loading, setLoading] = useState(true);
   const [isActive, setIsActive] = useState(false);
   const navigate = useNavigate();
+  const { userData } = useUser(); // Get user data from context
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const docRef = doc(db, 'subusers', id);
+        const docRef = doc(db, `products/${userData.branchCode}/subusers/${id}`);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const userData = docSnap.data();
@@ -24,35 +26,37 @@ const EditUser = () => {
           setIsActive(userData.isActive || false);
         } else {
           console.error('User not found');
-          toast.error('User not found. Redirecting to users list.'); // User feedback
-          setTimeout(() =>  navigate('/usersidebar/users'),5000); // Redirect if user not found
+          toast.error('User not found. Redirecting to users list.');
+          setTimeout(() => navigate('/usersidebar/users'), 5000);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
-        toast.error('Error fetching user data. Please try again.'); // User feedback
+        toast.error('Error fetching user data. Please try again.');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchUser();
-  }, [id, navigate]);
+  
+    if (userData?.branchCode) {
+      fetchUser();
+    }
+  }, [id, navigate, userData]);
 
   const handleSave = async () => {
     try {
-      const docRef = doc(db, 'subusers', id);
+      const docRef = doc(db, `products/${userData.branchCode}/subusers/${id}`);
       await updateDoc(docRef, {
         ...user,
         isActive,
       });
-      toast.success('User updated successfully!'); // Show success notification
-      setTimeout(() => navigate('/usersidebar/users'),5000); // Redirect back to user dashboard
+      toast.success('User updated successfully!');
+      setTimeout(() => navigate('/usersidebar/users'), 5000);
     } catch (error) {
       console.error('Error updating user:', error);
-      toast.error('Error updating user. Please try again.'); // Show error notification
+      toast.error('Error updating user. Please try again.');
     }
   };
-
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUser((prevUser) => ({ ...prevUser, [name]: value }));

@@ -81,36 +81,23 @@ function AddProduct() {
     }
   };
 
-  const handleAddCustomField = () => {
-    if (newFieldLabel) {
-      setCustomFields([...customFields, { label: newFieldLabel, type: newFieldType }]);
-      setNewFieldLabel('');
-      setNewFieldType('text');
-      setShowCustomFieldForm(false);
-    }
-  };
-
-  const handleDeleteCustomField = (index) => {
-    const updatedCustomFields = customFields.filter((_, i) => i !== index);
-    setCustomFields(updatedCustomFields);
-  };
-
+  
  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       const storage = getStorage();
       const imageUrls = [];
-
+  
       for (const image of images) {
-        const storageRef = ref(storage, `products/${image.name}`);
+        const storageRef = ref(storage, `products/${branchCode}/${image.name}`);
         await uploadBytes(storageRef, image);
         const imageUrl = await getDownloadURL(storageRef);
         imageUrls.push(imageUrl);
       }
-
+  
       const productData = {
         productName,
         brandName,
@@ -122,24 +109,23 @@ function AddProduct() {
         imageUrls,
         branchCode,
         customFields: customFieldValues,
-        // Include selected gender in product data
         priceType,
         extraRent: parseInt(extraRent, 10),
-        minimumRentalPeriod:parseInt(minimumRentalPeriod,10),
+        minimumRentalPeriod: parseInt(minimumRentalPeriod, 10),
       };
-
-      // Use setDoc to explicitly set the document ID as productCode
-      const productRef = doc(collection(db, 'products'), productCode);
+  
+      // Set the document in Firestore under the specific branch
+      const productRef = doc(db, `products/${branchCode}/products`, productCode);
       await setDoc(productRef, productData);
-
-      // Add an empty bookings sub-collection
-      await addDoc(collection(productRef, 'bookings'), {}); // Empty document with bookingId as ID
-
-      toast.success('Product  added successfully!');
-
-      setTimeout(() => navigate('/productdashboard'),5000);
-      
-      // Reset form
+  
+      // Add an empty bookings sub-collection inside the product document
+      await addDoc(collection(productRef, 'bookings'), {}); // Empty booking document
+  
+      toast.success('Product added successfully!');
+  
+      setTimeout(() => navigate('/productdashboard'), 5000);
+  
+      // Reset form fields
       setProductName('');
       setBrandName('');
       setQuantity('');
@@ -149,14 +135,14 @@ function AddProduct() {
       setDescription('');
       setImages([]);
       setCustomFieldValues({});
-      // Reset gender
-      setPriceType('')
-
+      setPriceType('');
+  
     } catch (error) {
       console.error("Error adding product: ", error);
-      toast('Error adding product. Please try again.');
+      toast.error('Error adding product. Please try again.');
     }
   };
+  
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);

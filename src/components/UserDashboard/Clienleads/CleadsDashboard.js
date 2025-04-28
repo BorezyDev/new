@@ -26,46 +26,50 @@ const ClientLeadsDashboard = () => {
 const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
-  useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const q = query(
-          collection(db, 'clientleads'),
-          where('branchCode', '==', userData.branchCode)
-        );
+useEffect(() => {
+  const fetchLeads = async () => {
+    if (!userData?.branchCode) return; // Ensure branchCode exists
 
-        const querySnapshot = await getDocs(q);
-        const fetchedLeads = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setLeads(fetchedLeads);
-        setOriginalLeads(fetchedLeads);
-        setTotalLeads(fetchedLeads.length);
-      } catch (error) {
-        toast.error('Error fetching client leads:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      const leadsRef = collection(db, `products/${userData.branchCode}/clientleads`);
+      const querySnapshot = await getDocs(leadsRef);
 
-    fetchLeads();
-  }, []);
+      const fetchedLeads = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this lead?');
-    if (confirmDelete) {
-      try {
-        const leadDocRef = doc(db, 'clientleads', id);
-        await deleteDoc(leadDocRef);
-        setLeads(leads.filter((lead) => lead.id !== id));
-        setTotalLeads(totalLeads - 1);
-      } catch (error) {
-        toast.error('Error deleting client lead:', error);
-      }
+      setLeads(fetchedLeads);
+      setOriginalLeads(fetchedLeads);
+      setTotalLeads(fetchedLeads.length);
+    } catch (error) {
+      console.error('Error fetching client leads:', error);
+      toast.error('Failed to fetch client leads.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  fetchLeads();
+}, [userData?.branchCode]); // Re-run when branchCode changes
+
+const handleDelete = async (id) => {
+  const confirmDelete = window.confirm('Are you sure you want to delete this lead?');
+  if (confirmDelete) {
+    try {
+      const leadDocRef = doc(db, `products/${userData.branchCode}/clientleads`, id);
+      await deleteDoc(leadDocRef);
+
+      setLeads(leads.filter((lead) => lead.id !== id));
+      setTotalLeads((prev) => prev - 1);
+      toast.success('Client lead deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting client lead:', error);
+      toast.error('Failed to delete client lead.');
+    }
+  }
+};
 
   const handleEdit = (id) => {
     navigate(`/editclientlead/${id}`);

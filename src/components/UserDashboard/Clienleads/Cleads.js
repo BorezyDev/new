@@ -40,17 +40,23 @@ useEffect(() => {
 
   const handleCreateClientLead = async (e) => {
     e.preventDefault();
-
-    const { leadName, mobileNo, requirement, eventDate, followupDate, source, stage, email,  } = formData;
-
+  
+    const { leadName, mobileNo, requirement, eventDate, followupDate, source, stage, email } = formData;
+  
     const today = new Date().toISOString().split('T')[0];
     if (new Date(followupDate) < new Date(today)) {
-      toast.error('To Date cannot be in the past.');
+      toast.error('Follow-up Date cannot be in the past.');
       return;
     }
-
+  
+    if (!branchCode) {
+      toast.error('Branch code is missing.');
+      return;
+    }
+  
     try {
-      await addDoc(collection(db, 'clientleads'), {
+      // Add the lead inside the respective branchCode in Firestore
+      await addDoc(collection(db, `products/${branchCode}/clientleads`), {
         leadName,
         mobileNo,
         requirement,
@@ -59,19 +65,18 @@ useEffect(() => {
         source,
         stage,
         email,
-        branchCode,
-
-         // Include new field
       });
-
+  
       toast.success('Client lead created successfully.');
       setTimeout(() => {
         navigate('/usersidebar/leads');
       }, 1500);
     } catch (error) {
+      console.error('Firestore Error:', error);
       toast.error('Failed to create client lead. Please try again.');
     }
   };
+  
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);

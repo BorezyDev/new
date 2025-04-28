@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy,collectionGroup } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import './Dahboard.css';
 import { useUser } from '../../Auth/UserContext';
@@ -20,161 +20,172 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const { userData } = useUser();
 
+  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const handleSidebarToggle = () => setSidebarOpen(!sidebarOpen);
   useEffect(() => {
-    const fetchAllBookingsWithuserDetails = async () => {
-      setLoading(true); 
+    const fetchAllBookingsWithUserDetails = async () => {
+      setLoading(true);
       try {
-        const q = query(
-          collection(db, 'products'),
-          where('branchCode', '==', userData.branchCode)
-        );
-        const productsSnapshot = await getDocs(q);
-        let allBookings = [];
-        const productBookingsCount = {}; // Object to store booking count per product
-
-        for (const productDoc of productsSnapshot.docs) {
-
+        if (!userData?.branchCode) return;
+  
+        const branchCode = userData.branchCode;
+        console.log('🔍 Branch Code:', branchCode);
+  
+        const productsRef = collection(db, `products/${branchCode}/products`);
+        const productsSnapshot = await getDocs(productsRef);
+        console.log('📦 Products found:', productsSnapshot.size);
+  
+        const allBookingFetches = productsSnapshot.docs.map(async (productDoc) => {
+          const productId = productDoc.id;
           const { productCode, productName, imageUrls } = productDoc.data();
-          const bookingsRef = collection(productDoc.ref, 'bookings');
+          console.log(`➡️ Fetching bookings for product: ${productCode} (${productId})`);
+  
+          const bookingsRef = collection(db, `products/${branchCode}/products/${productId}/bookings`);
           const bookingsQuery = query(bookingsRef, orderBy('pickupDate', 'asc'));
           const bookingsSnapshot = await getDocs(bookingsQuery);
-
-          bookingsSnapshot.forEach((doc) => {
-            const bookingData = doc.data();
-            allBookings.push({
+          console.log(`✅ Bookings for ${productCode}:`, bookingsSnapshot.size);
+  
+          return bookingsSnapshot.docs.map((bookingDoc) => {
+            const bookingData = bookingDoc.data();
+            return {
               productCode,
               productName,
               ...bookingData,
-              pickupDate: bookingData.pickupDate.toDate(),
-              returnDate: bookingData.returnDate.toDate(),
-              createdAt:  bookingData.createdAt || null,
-              stage: bookingData.userDetails?.stage 
-            });
-
-            // Count bookings per product
-            if (productBookingsCount[productCode]) {
-              productBookingsCount[productCode].count += 1;
-            } else {
-              productBookingsCount[productCode] = { count: 1, productName, imageUrls };
-            }
+              pickupDate: bookingData.pickupDate?.toDate() || null,
+              returnDate: bookingData.returnDate?.toDate() || null,
+              createdAt: bookingData.createdAt?.toDate() || null,
+              stage: bookingData.userDetails?.stage,
+              imageUrls,
+            };
           });
-        }
-
-        // Set all bookings and calculate stages
+        });
+  
+        const bookingResults = await Promise.all(allBookingFetches);
+        const allBookings = bookingResults.flat();
+        console.log('📊 Total bookings fetched:', allBookings.length);
+  
+        // Count bookings per product
+        const productBookingsCount = {};
+        allBookings.forEach((booking) => {
+          const { productCode, productName, imageUrls } = booking;
+          if (productBookingsCount[productCode]) {
+            productBookingsCount[productCode].count += 1;
+          } else {
+            productBookingsCount[productCode] = { count: 1, productName, imageUrls };
+          }
+        });
+  
+        // Set bookings & calculate stats
         setBookings(allBookings);
         calculateTodaysBookings(allBookings);
         calculateBookingStages(allBookings);
         calculateMonthlyBookings(allBookings);
-
-        // Sort products by booking count and set the top 5 products
+  
+        // Sort products by booking count and set the top 10
         const sortedProducts = Object.entries(productBookingsCount)
-          .sort(([, countA], [, countB]) => countB - countA) // Sort by count descending
-          .slice(0, 10) // Get top 10
-          .map(([productCode, { count, productName ,imageUrls}]) => ({ productCode, count, productName, imageUrls  })); // Map to an array of objects
-
+          .sort(([, a], [, b]) => b.count - a.count)
+          .slice(0, 10)
+          .map(([productCode, { count, productName, imageUrls }]) => ({
+            productCode,
+            count,
+            productName,
+            imageUrls,
+          }));
+  
         setTopProducts(sortedProducts);
       } catch (error) {
-        console.error('Error fetching bookings:', error);
+        console.error('❌ Error fetching bookings:', error);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
-
-    // Helper functions
-    const isSameDay = (date1, date2) => {
-      return (
-        date1.getDate() === date2.getDate() &&
-        date1.getMonth() === date2.getMonth() &&
-        date1.getFullYear() === date2.getFullYear()
-      );
-    };
-
+  
+    // Helpers
+    const isSameDay = (date1, date2) =>
+      date1 && date2 &&
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear();
+  
     const getUniqueBookingsByReceiptNumber = (bookings) => {
       const uniqueBookings = new Set();
       return bookings.filter((booking) => {
-        const isUnique = !uniqueBookings.has(booking.receiptNumber);
-        if (isUnique) {
-          uniqueBookings.add(booking.receiptNumber);
-        }
+        const isUnique = booking.receiptNumber && !uniqueBookings.has(booking.receiptNumber);
+        if (isUnique) uniqueBookings.add(booking.receiptNumber);
         return isUnique;
       });
     };
-
+  
     const calculateTodaysBookings = (allBookings) => {
       const today = new Date();
       const uniqueTodaysBookings = getUniqueBookingsByReceiptNumber(
-        allBookings.filter((booking) => 
-          booking.createdAt && booking.createdAt.toDate && isSameDay(new Date(booking.createdAt.toDate()), today)
+        allBookings.filter((booking) =>
+          booking.createdAt && isSameDay(booking.createdAt, today)
         )
       );
       setTodaysBookings(uniqueTodaysBookings.length);
     };
-    
-
+  
     const calculateBookingStages = (allBookings) => {
       const today = new Date();
       const uniqueBookings = getUniqueBookingsByReceiptNumber(allBookings);
-      const pickupPending = uniqueBookings.filter((booking) => {
-        const bookingPickupDate = new Date(booking.pickupDate);
-        return booking.stage === 'pickupPending' && isSameDay(bookingPickupDate, today);
-      }).length;
-
-      const returnPending = uniqueBookings.filter((booking) => {
-        const bookingReturnDate = new Date(booking.returnDate);
-        return booking.stage === 'returnPending' && isSameDay(bookingReturnDate, today);
-      }).length;
-
-      const successful = uniqueBookings.filter((booking) => {
-        const bookingReturnDate = new Date(booking.returnDate);
-        return booking.stage === 'successful' && isSameDay(bookingReturnDate, today);
-      }).length;
-
+  
+      const pickupPending = uniqueBookings.filter((booking) =>
+        booking.stage === 'pickupPending' && isSameDay(booking.pickupDate, today)
+      ).length;
+  
+      const returnPending = uniqueBookings.filter((booking) =>
+        booking.stage === 'returnPending' && isSameDay(booking.returnDate, today)
+      ).length;
+  
+      const successful = uniqueBookings.filter((booking) =>
+        booking.stage === 'successful' && isSameDay(booking.returnDate, today)
+      ).length;
+  
       setPickupPendingCount(pickupPending);
       setReturnPendingCount(returnPending);
       setSuccessfulCount(successful);
     };
-
+  
     const calculateMonthlyBookings = (allBookings) => {
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const uniqueBookings = getUniqueBookingsByReceiptNumber(allBookings);
-
-      const monthlyPickupPendingBookings = uniqueBookings.filter((booking) => {
-        const pickupMonth = new Date(booking.pickupDate).getMonth();
-        const pickupYear = new Date(booking.pickupDate).getFullYear();
-        return pickupMonth === currentMonth && pickupYear === currentYear && booking.stage === 'pickupPending';
-      });
-
-      const monthlyReturnPendingBookings = uniqueBookings.filter((booking) => {
-        const returnMonth = new Date(booking.returnDate).getMonth();
-        const returnYear = new Date(booking.returnDate).getFullYear();
-        return returnMonth === currentMonth && returnYear === currentYear && booking.stage === 'returnPending';
-      });
-
-      const monthlySuccessfulBookings = uniqueBookings.filter((booking) => {
-        const returnMonth = new Date(booking.returnDate).getMonth();
-        const returnYear = new Date(booking.returnDate).getFullYear();
-        return returnMonth === currentMonth && returnYear === currentYear && booking.stage === 'successful';
-      });
-
-      const monthlyTotal = uniqueBookings.filter((booking) => {
-        const pickupMonth = new Date(booking.pickupDate).getMonth();
-        const pickupYear = new Date(booking.pickupDate).getFullYear();
-        return pickupMonth === currentMonth && pickupYear === currentYear;
-      }).length;
-
-      setMonthlyPickupPending(monthlyPickupPendingBookings.length);
-      setMonthlyReturnPending(monthlyReturnPendingBookings.length);
+  
+      const monthlyPickupPending = uniqueBookings.filter((booking) =>
+        booking.pickupDate?.getMonth() === currentMonth &&
+        booking.pickupDate?.getFullYear() === currentYear &&
+        booking.stage === 'pickupPending'
+      ).length;
+  
+      const monthlyReturnPending = uniqueBookings.filter((booking) =>
+        booking.returnDate?.getMonth() === currentMonth &&
+        booking.returnDate?.getFullYear() === currentYear &&
+        booking.stage === 'returnPending'
+      ).length;
+  
+      const monthlySuccessful = uniqueBookings.filter((booking) =>
+        booking.returnDate?.getMonth() === currentMonth &&
+        booking.returnDate?.getFullYear() === currentYear &&
+        booking.stage === 'successful'
+      ).length;
+  
+      const monthlyTotal = uniqueBookings.filter((booking) =>
+        booking.pickupDate?.getMonth() === currentMonth &&
+        booking.pickupDate?.getFullYear() === currentYear
+      ).length;
+  
+      setMonthlyPickupPending(monthlyPickupPending);
+      setMonthlyReturnPending(monthlyReturnPending);
+      setMonthlySuccessful(monthlySuccessful);
       setMonthlyTotalBookings(monthlyTotal);
-      setMonthlySuccessful(monthlySuccessfulBookings.length);
     };
-
-    fetchAllBookingsWithuserDetails();
-  }, [userData.branchCode]);
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const handleSidebarToggle = () => setSidebarOpen(!sidebarOpen);
-
+  
+    fetchAllBookingsWithUserDetails();
+  }, [userData?.branchCode]);
+  
+  
   return (
     <div className={`dashboard-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <UserSidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />

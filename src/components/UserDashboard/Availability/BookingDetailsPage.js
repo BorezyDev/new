@@ -7,6 +7,7 @@ import './BookingDetailsPage.css';
 import { useUser } from '../../Auth/UserContext';
 import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
 import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
+import { FaWhatsapp } from 'react-icons/fa';
 
 
 const formatTimestamp = (timestamp) => {
@@ -36,6 +37,10 @@ const BookingDetailsPage = () => {
   // State for editing specific fields
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
   const [isEditingPayment, setIsEditingPayment] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [selectedContactNo, setSelectedContactNo] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const [isEditingSecondPayment, setIsEditingSecondPayment] = useState(false);
   const [secondPaymentMode, setSecondPaymentMode] = useState('');
@@ -70,16 +75,15 @@ const BookingDetailsPage = () => {
     const fetchBookingAndProductDetails = async () => {
       setLoading(true);
       try {
-        const productsCollection = collection(db, 'products');
+        // Reference to the products collection within the user's branch
+        const productsCollection = collection(db, `products/${userData.branchCode}/products`);
         const productsSnapshot = await getDocs(productsCollection);
 
-        // Prepare batched queries for all bookings
+        // Prepare batched queries for all bookings for each product in the branch
         const bookingPromises = productsSnapshot.docs.map((productDoc) => {
           const bookingsCollection = collection(
             db,
-            'products',
-            productDoc.id,
-            'bookings'
+            `products/${userData.branchCode}/products/${productDoc.id}/bookings`
           );
           const q = query(bookingsCollection, where('receiptNumber', '==', receiptNumber));
           return getDocs(q).then((querySnapshot) => ({
@@ -104,7 +108,7 @@ const BookingDetailsPage = () => {
           }))
         );
 
-        // Update states with fetched data
+        // Update states with fetched data from userDetails
         if (allBookings.length > 0) {
           const details = allBookings[0].userDetails || {}; // Assuming all bookings share the same user details
           setSecondPaymentMode(details.secondpaymentmode || '');
@@ -144,15 +148,44 @@ const BookingDetailsPage = () => {
     };
 
     fetchBookingAndProductDetails();
-  }, [receiptNumber]);
+  }, [receiptNumber, userData.branchCode]); // Include userData.branchCode as a dependency
 
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        if (!userData?.branchCode) return;
+
+        const templatesCol = collection(db, `products/${userData.branchCode}/templates`);
+        const templatesSnapshot = await getDocs(templatesCol);
+
+        const templatesList = templatesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setTemplates(templatesList);
+      } catch (error) {
+        console.error("Error fetching templates:", error);
+        toast.error("Error fetching templates");
+      }
+    };
+
+    fetchTemplates();
+  }, [userData?.branchCode]);
+
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen ? "hidden" : "auto";
+  }, [isModalOpen]);
 
   const handleSaveSecondPayment = async () => {
     if (bookings.length === 0) return;
 
     const bookingId = bookings[0].id;
     const productId = bookings[0].productId;
-    const bookingRef = doc(db, 'products', productId, 'bookings', bookingId);
+    const bookingRef = doc(db, `products/${userData.branchCode}/products/${productId}/bookings`, bookingId);
 
     try {
       const currentDetails = bookings[0].userDetails || {};
@@ -215,7 +248,6 @@ const BookingDetailsPage = () => {
         updates: changes,
       };
 
-
       // Update Firestore document
       await updateDoc(bookingRef, {
         'userDetails.secondpaymentmode': secondPaymentMode,
@@ -231,6 +263,7 @@ const BookingDetailsPage = () => {
       console.error('Error updating second payment details:', error);
     }
   };
+
 
   if (loading) {
     return <p>Loading...</p>;
@@ -248,7 +281,7 @@ const BookingDetailsPage = () => {
 
     const bookingId = bookings[0].id;
     const productId = bookings[0].productId;
-    const bookingRef = doc(db, 'products', productId, 'bookings', bookingId);
+    const bookingRef = doc(db, `products/${userData.branchCode}/products/${productId}/bookings`, bookingId);
 
     try {
       await updateDoc(bookingRef, {
@@ -269,12 +302,13 @@ const BookingDetailsPage = () => {
       toast.error('Error updating personal info:', error);
     }
   };
+
   const handleSavePaymentDetails = async () => {
     if (bookings.length === 0) return;
 
     const bookingId = bookings[0].id;
     const productId = bookings[0].productId;
-    const bookingRef = doc(db, 'products', productId, 'bookings', bookingId);
+    const bookingRef = doc(db, `products/${userData.branchCode}/products/${productId}/bookings`, bookingId);
 
     try {
       await updateDoc(bookingRef, {
@@ -298,6 +332,106 @@ const BookingDetailsPage = () => {
       toast.error('Error updating payment details:', error);
     }
   };
+  const handleContactNumberClick = () => {
+    const contactNo = userDetails?.contact || '';
+    setSelectedContactNo(contactNo);
+    setIsModalOpen(true);
+  };
+  
+
+  // Function to send WhatsApp message
+  const sendWhatsAppMessage = (contactNo, message) => {
+    if (!contactNo) {
+      toast.error("No contact number provided!");
+      return;
+    }
+
+    // Check if the contact number starts with +91 or not
+    const formattedContactNo = contactNo.startsWith("+91")
+      ? contactNo
+      : `+91${contactNo}`;
+
+    const whatsappURL = `https://api.whatsapp.com/send?phone=${formattedContactNo}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, "_blank");
+  };
+
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+
+    }).format(date);
+  };
+
+
+
+  // Handle template click and send WhatsApp message
+  const handleTemplateClick = (template) => {
+    if (!bookings.length) return;
+  
+    const booking = bookings[0];
+    const contactNo = booking?.userDetails?.contact || '';
+    const createdAt = booking?.createdAt;
+    const pickupDate = booking?.pickupDate;
+    const returnDate = booking?.returnDate;
+  
+    const productsList = bookings.map((b) => ({
+      productCode: b.product?.productCode || '',
+      productName: b.product?.productName || '',
+      quantity: b.quantity || '',
+    }));
+  
+    const productsString = productsList
+      .map((p) => `${p.productCode} : ${p.quantity}`)
+      .join(', ');
+  
+    const productsString1 = productsList
+      .map((p) => `${p.productName}`)
+      .join(', ');
+  
+    const templateBody = template.body;
+  
+    const message = templateBody
+      .replace('{clientName}', name || '')
+      .replace('{clientEmail}', email || '')
+      .replace('{CustomerBy}', customerBy || '')
+      .replace('{ReceiptBy}', receiptBy || '')
+      .replace('{Alterations}', '') // optional, you can add this to state if needed
+      .replace('{SpecialNote}', specialNote || '')
+      .replace('{GrandTotalRent}', grandTotalRent || '')
+      .replace('{DiscountOnRent}', discountOnRent || '')
+      .replace('{FinalRent}', finalRent || '')
+      .replace('{GrandTotalDeposit}', grandTotalDeposit || '')
+      .replace('{DiscountOnDeposit}', discountOnDeposit || '')
+      .replace('{FinalDeposit}', finalDeposit || '')
+      .replace('{AmountToBePaid}', amountToBePaid || '')
+      .replace('{AmountPaid}', amountPaid || '')
+      .replace('{Balance}', balance || '')
+      .replace('{PaymentStatus}', paymentStatus || '')
+      .replace('{FirstPaymentDetails}', firstPaymentDetails || '')
+      .replace('{FirstPaymentMode}', firstPaymentMode || '')
+      .replace('{SecondPaymentMode}', secondPaymentMode || '')
+      .replace('{SecondPaymentDetails}', secondPaymentDetails || '')
+      .replace('{Products}', productsString || '')
+      .replace('{Products1}', productsString1 || '')
+      .replace('{createdAt}', createdAt ? formatDate(createdAt.toDate()) : '')
+      .replace('{pickupDate}', pickupDate ? formatDate(pickupDate.toDate()) : '')
+      .replace('{returnDate}', returnDate ? formatDate(returnDate.toDate()) : '')
+      .replace('{receiptNumber}', receiptNumber || '')
+      .replace('{stage}', stage || '')
+      .replace('{ContactNo}', contactNo || '')
+      .replace('{IdentityProof}', identityProof || '')
+      .replace('{IdentityNumber}', identityNumber || '');
+  
+    sendWhatsAppMessage(contactNo, message);
+    setIsModalOpen(false);
+  };
+  
+
+  // Handle contact number selection
+
+
   return (
     <>
       <div className="booking-details-container">
@@ -337,6 +471,50 @@ const BookingDetailsPage = () => {
           <button onClick={() => window.print()} className="print-button">
             Print
           </button>
+          <button
+            onClick={(event) => {
+              event.stopPropagation(); // Prevent event bubbling
+              handleContactNumberClick(); // Your existing function
+            }}
+          >
+            <FaWhatsapp  />
+          </button>
+
+          {/* Modal rendering */}
+          {isModalOpen && (
+            <>
+              {/* Modal Background Overlay */}
+              <div
+                className="modal-overlay"
+                onClick={() => setIsModalOpen(false)} // Close the modal when clicking on the overlay
+              ></div>
+
+              {/* Modal Popup */}
+              <div
+                className="modal-popup"
+                onClick={(e) => e.stopPropagation()} // Prevent modal from closing on click inside the modal
+              >
+                <h3>Select a Template</h3>
+                <ul className="template-list">
+                  {templates.map((template) => (
+                    <li
+                      key={template.id}
+                      onClick={() => handleTemplateClick(template)}
+                      className="template-item"
+                    >
+                      {template.name}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+
+                >
+                  Close
+                </button>
+              </div>
+            </>
+          )}
 
 
           <h2>Booking Details for Receipt Number: {receiptNumber}</h2>
@@ -377,9 +555,13 @@ const BookingDetailsPage = () => {
                   <input type="text" value={receiptBy} onChange={(e) => setReceiptBy(e.target.value)} placeholder="Receipt By" />
                 </div>
 
+                {userData?.role !== 'Subuser' && (
 
                 <button onClick={handleSavePersonalInfo} className="save-button">Save</button>
-                <button onClick={() => setIsEditingPersonalInfo(false)} >Cancel</button>
+              )}
+                  <button onClick={() => setIsEditingPersonalInfo(false)} >Cancel</button>
+                
+
               </>
             ) : (
               <>
@@ -402,7 +584,10 @@ const BookingDetailsPage = () => {
                 <div className="info-row">
                   <p><strong>Receipt By:</strong> {receiptBy || 'N/A'}</p>
                 </div>
+                {userData?.role !== 'Subuser' && (
+
                 <button onClick={() => setIsEditingPersonalInfo(true)} className="edit-button">Edit</button>
+              )}
 
               </>
             )}
@@ -497,7 +682,7 @@ const BookingDetailsPage = () => {
                   <label><strong>First Payment Mode:</strong></label>
                   <input type="text" value={firstPaymentMode} onChange={(e) => setFirstPaymentMode(e.target.value)} placeholder="First Payment Mode" />
                 </div>
-                <button onClick={handleSavePaymentDetails}className="save-button">Save </button>
+                <button onClick={handleSavePaymentDetails} className="save-button">Save </button>
                 <button onClick={() => setIsEditingPayment(false)}>Cancel</button>
               </>
             ) : (
@@ -526,7 +711,11 @@ const BookingDetailsPage = () => {
                   <p><strong>First Payment Details:</strong> ₹{userDetails.firstpaymentdtails || 'N/A'}</p>
                   <p><strong>First Payment Mode:</strong> {userDetails.firstpaymentmode || 'N/A'}</p>
                 </div>
+                {userData?.role !== 'Subuser' && (
+
                 <button onClick={() => setIsEditingPayment(true)}>Edit</button>
+              )}
+
               </>
             )}
 

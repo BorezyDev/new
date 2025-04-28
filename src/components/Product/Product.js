@@ -30,16 +30,16 @@ const ProductDashboard = () => {
   useEffect(() => {
     const fetchProductsData = async () => {
       try {
-        const q = query(
-          collection(db, 'products'),
-          where('branchCode', '==', userData.branchCode)
-        );
-        const querySnapshot = await getDocs(q);
+        if (!userData?.branchCode) return;
+  
+        const productsCollectionRef = collection(db, `products/${userData.branchCode}/products`);
+        const querySnapshot = await getDocs(productsCollectionRef);
+  
         const fetchedProducts = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
-
+  
         // Gather all custom fields from products
         const allCustomFields = new Set();
         fetchedProducts.forEach((product) => {
@@ -47,19 +47,21 @@ const ProductDashboard = () => {
             Object.keys(product.customFields).forEach(field => allCustomFields.add(field));
           }
         });
-
+  
         setProducts(fetchedProducts);
         setTotalProducts(fetchedProducts.length);
         setCustomFields([...allCustomFields]);
       } catch (error) {
-        toast.error('Error fetching products data:', error);
+        console.error('Error fetching products data:', error);
+        toast.error('Error fetching products data. Please try again.');
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchProductsData();
   }, [userData]);
+  
 
   const handleDelete = async (id) => {
     try {
@@ -217,7 +219,8 @@ const ProductDashboard = () => {
                 return; // Skip saving this product
               }
   
-              const productRef = doc(db, 'products', product.productCode); // Create a reference using productCode
+              const branchCode = userData.branchCode; // Ensure userData contains branchCode
+              const productRef = doc(db, `products/${branchCode}/products`, product.productCode); // Updated path with branchCode
               await setDoc(productRef, product); // Set the document with product data
               console.log('Product saved successfully:', product);
             } catch (error) {
@@ -235,7 +238,6 @@ const ProductDashboard = () => {
     }
   };
   
- 
 
  const handlecopy = (product) => {
   // Destructure product details from the product object

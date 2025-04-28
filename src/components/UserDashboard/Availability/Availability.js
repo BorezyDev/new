@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, setDoc,writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, setDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import UserHeader from '../../UserDashboard/UserHeader';
@@ -44,25 +44,21 @@ const BookingDashboard = () => {
     navigate(`/booking-details/${booking.receiptNumber}`, { state: { booking } });
   };
 
-
   useEffect(() => {
     const fetchAllBookingsWithUserDetails = async () => {
       setLoading(true); // Start loading
       try {
-        const todayDateStr = new Date().toDateString(); // Get today's date as a string
-        const q = query(
-          collection(db, 'products'),
-          where('branchCode', '==', userData.branchCode)
-        );
-  
-        const productsSnapshot = await getDocs(query(q, where('branchCode', '==', userData.branchCode)));
-  
+
+        // Query for products in the correct branch subcollection
+        const productsRef = collection(db, `products/${userData.branchCode}/products`); // Updated path for branch-specific products
+        const productsSnapshot = await getDocs(productsRef);
+
         const allBookingsPromises = productsSnapshot.docs.map(async (productDoc) => {
           const productCode = productDoc.data().productCode;
           const bookingsRef = collection(productDoc.ref, 'bookings');
           const bookingsQuery = query(bookingsRef, orderBy('pickupDate', 'asc'));
           const bookingsSnapshot = await getDocs(bookingsQuery);
-  
+
           const batch = writeBatch(db); // Batch for updates
           const productBookings = bookingsSnapshot.docs.map((docSnapshot) => {
             const bookingData = docSnapshot.data();
@@ -75,39 +71,49 @@ const BookingDashboard = () => {
               userDetails,
               createdAt,
             } = bookingData;
-  
-            const pickupDateStr =
-              pickupDate && typeof pickupDate.toDate === 'function'
-                ? pickupDate.toDate().toDateString()
-                : new Date(pickupDate).toDateString();
-            const returnDateStr =
-              returnDate && typeof returnDate.toDate === 'function'
-                ? returnDate.toDate().toDateString()
-                : new Date(returnDate).toDateString();
-  
-            if (pickupDateStr === todayDateStr && userDetails.stage === 'Booking') {
-              batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+
+            const pickupDateObj = pickupDate && typeof pickupDate.toDate === 'function' ? pickupDate.toDate() : new Date(pickupDate);
+            const returnDateObj = returnDate && typeof returnDate.toDate === 'function' ? returnDate.toDate() : new Date(returnDate);
+            const todayDateObj = new Date(); // Get today's date
+
+            console.log('Today Date:', todayDateObj);
+            console.log('Pickup Date:', pickupDateObj);
+            console.log('Return Date:', returnDateObj);
+            console.log('User Stage:', userDetails.stage);
+            // Update stages as needed based on today's date
+            if (pickupDateObj.toDateString() === todayDateObj.toDateString() && userDetails.stage === 'Booking') {
+              console.log(`Updating stage to 'pickupPending' for booking ${docSnapshot.id}`);
+              batch.update(doc(db, `products/${userData.branchCode}/products/${productDoc.id}/bookings/${docSnapshot.id}`), {
                 'userDetails.stage': 'pickupPending',
               });
               userDetails.stage = 'pickupPending';
             }
-  
-            if (returnDateStr === todayDateStr && userDetails.stage === 'pickup') {
-              batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+
+            if (returnDateObj.toDateString() === todayDateObj.toDateString() && userDetails.stage === 'pickup') {
+              console.log(`Updating stage to 'returnPending' for booking ${docSnapshot.id}`);
+              batch.update(doc(db, `products/${userData.branchCode}/products/${productDoc.id}/bookings/${docSnapshot.id}`), {
                 'userDetails.stage': 'returnPending',
               });
               userDetails.stage = 'returnPending';
             }
-  
-            if (returnDateStr >= todayDateStr && ['return', 'cancelled', 'successful'].includes(userDetails.stage)) {
-              const today = new Date();
-              batch.update(doc(db, `products/${productDoc.id}/bookings/${docSnapshot.id}`), {
-                returnDate: today,
+
+            // Ensure returnDate is updated correctly
+            if (['return', 'cancelled', 'successful'].includes(userDetails.stage) && returnDateObj.getTime() >= todayDateObj.getTime()) {
+              console.log(`Updating returnDate for booking ${docSnapshot.id} to today`);
+
+              batch.update(doc(db, `products/${userData.branchCode}/products/${productDoc.id}/bookings/${docSnapshot.id}`), {
+                returnDate: todayDateObj, // Store as Firestore Timestamp
               });
-              bookingData.returnDate = today;
+
+              bookingData.returnDate = todayDateObj;
             }
+
+            // Logging paths for batch update
+            console.log(`Firestore path for update: products/${userData.branchCode}/products/${productDoc.id}/bookings/${docSnapshot.id}`);
+
+
             const productName = productDoc.data().productName || "N/A";
-  
+
             return {
               bookingId,
               receiptNumber,
@@ -152,13 +158,13 @@ const BookingDashboard = () => {
               SecondPaymentDetails: userDetails.secondpaymentdetails || 'N/A',
             };
           });
-  
+
           await batch.commit(); // Commit batched updates
           return productBookings;
         });
-  
+
         const allBookings = (await Promise.all(allBookingsPromises)).flat();
-  
+
         // Group bookings by receiptNumber, and aggregate products correctly
         const groupedBookings = allBookings.reduce((acc, booking) => {
           const { receiptNumber, products } = booking;
@@ -179,10 +185,10 @@ const BookingDashboard = () => {
           }
           return acc;
         }, {});
-  
+
         // Convert grouped bookings object to array
         let bookingsArray = Object.values(groupedBookings);
-  
+
         // Sort bookings by `createdAt` in descending order
         bookingsArray.sort((a, b) => {
           const dateA = a.createdAt
@@ -193,7 +199,7 @@ const BookingDashboard = () => {
             : new Date(0);
           return dateB - dateA; // Latest first
         });
-  
+
         setBookings(bookingsArray); // Update state with sorted bookings
       } catch (error) {
         toast.error('Error fetching bookings:', error);
@@ -201,22 +207,49 @@ const BookingDashboard = () => {
         setLoading(false); // End loading
       }
     };
-  
+
     fetchAllBookingsWithUserDetails();
   }, [userData.branchCode]);
-  
 
+  const handleDelete = async (receiptNumber, productCode) => {
+    try {
+      const branchCode = userData.branchCode;
 
+      console.log("Deleting booking with:");
+      console.log("Branch Code:", branchCode);
+      console.log("Product Code:", productCode);
+      console.log("Receipt Number:", receiptNumber);
 
-  const handleDelete = async (id) => {
-    if (window.toast.confirm("Are you sure you want to delete this booking?")) {
-      try {
-        // Add your delete logic here
-      } catch (error) {
-        toast.error('Error deleting booking:', error);
+      // Reference to the bookings subcollection for the given product
+      const bookingsRef = collection(db, `products/${branchCode}/products/${productCode}/bookings`);
+
+      // Query to find booking with matching receiptNumber
+      const q = query(bookingsRef, where('receiptNumber', '==', receiptNumber));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast.error('No booking found with the specified receipt number.');
+        return;
       }
+
+      // Assuming receiptNumber is unique, delete the first match
+      const bookingDoc = querySnapshot.docs[0];
+      await deleteDoc(bookingDoc.ref);
+
+      toast.success('Booking deleted successfully');
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      toast.error('Error deleting booking');
     }
   };
+
+
+
+
+
+
+
+
 
   const handleAddBooking = () => {
     navigate('/usersidebar/availability'); // Navigate to an add booking page
@@ -394,19 +427,23 @@ const BookingDashboard = () => {
       const pickUpDate = bookingToUpdate.pickupDate; // Ensure you are using the correct property name
       const currentStage = bookingToUpdate.stage;
 
-      // Check if pickUpDate is today
-
-
       // Loop through all products
       for (const product of products) {
         const productCode = product.productCode;
-        const bookingsRef = collection(db, `products/${productCode}/bookings`);
+
+        // Reference to the correct product subcollection in Firestore under the respective branchCode
+        const bookingsRef = collection(
+          db,
+          `products/${userData.branchCode}/products/${productCode}/bookings`
+        );
+
         const q = query(bookingsRef, where("receiptNumber", "==", receiptNumber));
         const querySnapshot = await getDocs(q);
 
         // Check if any documents were found
         if (querySnapshot.empty) {
-          toast.error('No documents found for bookingId:', bookingId);
+          toast.error(`No documents found for bookingId: ${bookingId} in product: ${productCode}`);
+
           // Create a new document if needed
           const bookingDocRef = doc(bookingsRef, bookingId);
           await setDoc(bookingDocRef, {
@@ -424,7 +461,7 @@ const BookingDashboard = () => {
 
           // Update the booking stage in Firestore
           await updateDoc(bookingDocRef, { 'userDetails.stage': newStage });
-          toast.success('Stage updated successfully ');
+          toast.success('Stage updated successfully');
         }
       }
 
@@ -438,31 +475,33 @@ const BookingDashboard = () => {
       );
     } catch (error) {
       console.error('Error updating booking stage:', error);
+      toast.error('Error updating booking stage');
     }
   };
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const templatesCol = query(
-          collection(db, "templates"),
-          where('branchCode', '==', userData.branchCode)
+        if (!userData?.branchCode) return;
 
-        );
-
+        const templatesCol = collection(db, `products/${userData.branchCode}/templates`);
         const templatesSnapshot = await getDocs(templatesCol);
+
         const templatesList = templatesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
+
         setTemplates(templatesList);
       } catch (error) {
-        toast.error("Error fetching templates:", error);
+        console.error("Error fetching templates:", error);
+        toast.error("Error fetching templates");
       }
     };
 
     fetchTemplates();
-  }, []);
+  }, [userData?.branchCode]);
+
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -486,14 +525,14 @@ const BookingDashboard = () => {
   };
 
   const formatDate = (date) => {
-    return new Intl.DateTimeFormat('en-GB', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric', 
-    
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+
     }).format(date);
   };
-  
+
 
 
   // Handle template click and send WhatsApp message
@@ -506,11 +545,11 @@ const BookingDashboard = () => {
 
     const templateBody = template.body;
     const productsString = selectedBooking.products
-  .map(product => `${product.productCode} : ${product.quantity}`)
-  .join(", ");
-  const productsString1 = selectedBooking.products
-  .map(product => `${product.productName}`)
-  .join(", ");
+      .map(product => `${product.productCode} : ${product.quantity}`)
+      .join(", ");
+    const productsString1 = selectedBooking.products
+      .map(product => `${product.productName}`)
+      .join(", ");
 
 
     // Replace placeholders with booking data
@@ -728,6 +767,21 @@ const BookingDashboard = () => {
                           >
                             <FaWhatsapp style={{ marginRight: "5px" }} />
                           </button>
+                          {userData?.role !== 'Subuser' && (
+
+                          <button
+                            onClick={(event) =>{
+                              event.stopPropagation();
+                             handleDelete(booking.receiptNumber, booking.products[0]?.productCode)}
+                            }
+                            className="delete-button"
+                          >
+                            <FaTrash />
+                          </button>
+                          )}
+
+
+
 
                           {/* Modal rendering */}
                           {isModalOpen && (
@@ -757,7 +811,7 @@ const BookingDashboard = () => {
                                 </ul>
                                 <button
                                   onClick={() => setIsModalOpen(false)}
-                                  
+
                                 >
                                   Close
                                 </button>

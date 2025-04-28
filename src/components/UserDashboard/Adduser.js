@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { addDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore'; // Firestore methods
+import { addDoc, collection, doc, getDoc, updateDoc,setDoc } from 'firebase/firestore'; // Firestore methods
 import { db } from '../../firebaseConfig'; // Firebase config
 import { useNavigate } from 'react-router-dom'; // Navigation
 import { useUser } from '../Auth/UserContext'; // Access user data from context
@@ -34,84 +34,77 @@ const AddUser = () => {
   useEffect(() => {
     if (userData && userData.branchCode) {
       setBranchCode(userData.branchCode);
-      console.log('Fetched branch code:', userData.branchCode); // Debugging
-
-      // Fetch the corresponding branch document using branchCode
+      console.log('Fetched branch code:', userData.branchCode);
+  
       const fetchBranchData = async () => {
         const branchRef = doc(db, 'branches', userData.branchCode);
         const branchSnap = await getDoc(branchRef);
-
+  
         if (branchSnap.exists()) {
           const branchData = branchSnap.data();
           const currentUsers = branchData.numberOfUsers || 0;
           console.log('Current number of users:', currentUsers);
-
-          if (currentUsers === 0) {
-            setUserLimitReached(true); // Set user limit reached if numberOfUsers is zero
-          } else {
-            setUserLimitReached(false);
-          }
+  
+          setUserLimitReached(currentUsers === 0);
         } else {
-          console.error('Branch not found. Branch Code:', branchCode);
+          console.error('Branch not found. Branch Code:', userData.branchCode);
         }
       };
-
+  
       fetchBranchData();
     }
-  }, [userData, branchCode]);
+  }, [userData]);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Check if user limit is reached
+  
     if (userLimitReached) {
       toast.error('User limit reached. No more users can be added.');
       return;
     }
-
-    // Prepare new user data
+  
     try {
       const auth = getAuth();
-      // Create authenticated user with Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const userId = userCredential.user.uid;
-
-      // Prepare new user data to be stored in Firestore
+  
       const newUser = {
-        userId, // Store the Firebase Auth user ID
+        userId,
         name,
         email,
         salary,
         contactNumber,
         password,
-        role, // Role is now 'Subuser' by default
+        role,
         permission,
         date,
-        isActive: true, // User is active by default
+        isActive: true,
         branchCode,
       };
-
-      // Add new user to Firestore 'subusers' collection
-      await addDoc(collection(db, 'subusers'), newUser);
+  
+      // 🔥 Store in new path: products/{branchCode}/subusers/{userId}
+      const subuserRef = doc(db, `products/${branchCode}/subusers/${userId}`);
+      await setDoc(subuserRef, newUser);
       console.log('User added successfully.');
-
-      // Update the branch's user count
+  
+      // 🔄 Update user count in branch document
       const branchRef = doc(db, 'branches', branchCode);
       const branchSnap = await getDoc(branchRef);
-
+  
       if (branchSnap.exists()) {
         const branchData = branchSnap.data();
         const currentUsers = branchData.numberOfUsers || 0;
-
+  
         await updateDoc(branchRef, {
-          numberOfUsers: Math.max(0, currentUsers - 1), // Ensure user count doesn't go below 0
+          numberOfUsers: Math.max(0, currentUsers - 1),
         });
         console.log('Branch user count updated.');
       } else {
         console.error('Branch not found. Branch Code:', branchCode);
       }
-
-      // Reset form fields
+  
+      // Reset form
       setName('');
       setEmail('');
       setSalary('');
@@ -120,15 +113,15 @@ const AddUser = () => {
       setRole('Subuser');
       setPermission('');
       setDate('');
-
-      // Redirect to users list after success
+  
       toast.success('User added successfully');
-      setTimeout(() => navigate('/usersidebar/users'),5000)
+      setTimeout(() => navigate('/usersidebar/users'), 5000);
     } catch (error) {
       console.error('Error adding user:', error);
       toast.error('Failed to add user. Please check if the email ID is incorrect or already exists.');
     }
   };
+  
 
   const handleCancel = () => {
     navigate('/usersidebar/users'); // Redirect to user dashboard on cancel

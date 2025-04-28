@@ -4,12 +4,15 @@ import { db } from "../../firebaseConfig";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useUser } from '../Auth/UserContext';
 
 const EditTemplate = () => {
   const [templateName, setTemplateName] = useState("");
   const [templateBody, setTemplateBody] = useState("");
   const navigate = useNavigate();
   const { id } = useParams(); // Template ID from route params
+  const { userData } = useUser(); // Access userData from the context
+
 
   const placeholders = [
     { label: "Client Name", value: "{clientName}" },
@@ -49,7 +52,9 @@ const EditTemplate = () => {
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
-        const docRef = doc(db, "templates", id);
+        if (!userData?.branchCode) return;
+  
+        const docRef = doc(db, `products/${userData.branchCode}/templates`, id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const { name, body } = docSnap.data();
@@ -64,32 +69,34 @@ const EditTemplate = () => {
         toast.error("Failed to fetch template.");
       }
     };
-
+  
     fetchTemplate();
-  }, [id, navigate]);
+  }, [id, navigate, userData?.branchCode]);
+  
 
   const handleUpdateTemplate = async (e) => {
     e.preventDefault();
-
+  
     if (!templateName || !templateBody) {
       toast.warn("Both fields are required!");
       return;
     }
-
+  
     try {
-      const docRef = doc(db, "templates", id);
+      const docRef = doc(db, `products/${userData.branchCode}/templates`, id);
       await updateDoc(docRef, {
         name: templateName,
         body: templateBody,
         updatedAt: new Date(),
       });
       toast.success("Template updated successfully!");
-      setTimeout(() => navigate("/overview"), 3000);
+      setTimeout(() => navigate("/overview"), 1500);
     } catch (error) {
       console.error("Error updating template:", error);
       toast.error("Failed to update template.");
     }
   };
+  
 
   const insertPlaceholder = (placeholder) => {
     setTemplateBody((prev) => `${prev} ${placeholder}`);

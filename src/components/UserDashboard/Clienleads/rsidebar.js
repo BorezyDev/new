@@ -3,6 +3,7 @@ import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { FaWhatsapp } from 'react-icons/fa';
 import './RightSidebar.css'; // Adjust the path as per your directory structure
+import { useUser } from '../../Auth/UserContext'; // Assuming you're using a UserContext for branchCode
 
 const   CRightSidebar = ({ isOpen, onClose, selectedLead }) => {
   const [stage, setStage] = useState('');
@@ -14,6 +15,7 @@ const   CRightSidebar = ({ isOpen, onClose, selectedLead }) => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templateBody, setTemplateBody] = useState('');
+const { userData } = useUser(); // Get user data from context
 
   const templates = {
     'Details Shared': 'Thank you for your interest. Let us know if you have any further questions!',
@@ -32,12 +34,17 @@ const   CRightSidebar = ({ isOpen, onClose, selectedLead }) => {
 
   const handleSave = async () => {
     if (newComment.trim() === '') return;
-
+  
+    if (!userData?.branchCode || !selectedLead?.id) {
+      alert('Invalid lead or branchCode');
+      return;
+    }
+  
     try {
-      const leadRef = doc(db, 'clientleads', selectedLead.id);
+      const leadRef = doc(db, `products/${userData.branchCode}/clientleads`, selectedLead.id);
       const currentDateTime = new Date().toLocaleString();
       const commentWithTimestamp = `${currentDateTime}: ${newComment}`;
-
+  
       await updateDoc(leadRef, {
         stage,
         followupDate,
@@ -45,9 +52,9 @@ const   CRightSidebar = ({ isOpen, onClose, selectedLead }) => {
         comments: arrayUnion(commentWithTimestamp),
         response,
       });
-
+  
       alert('Lead updated successfully!');
-      setComments([...comments, commentWithTimestamp]);
+      setComments((prev) => [...prev, commentWithTimestamp]); // Update state correctly
       setNewComment('');
       onClose();
     } catch (error) {
@@ -55,6 +62,7 @@ const   CRightSidebar = ({ isOpen, onClose, selectedLead }) => {
       alert('Failed to update lead. Please try again.');
     }
   };
+  
 
   const handleTemplateSelect = (template) => {
     setSelectedTemplate(template);

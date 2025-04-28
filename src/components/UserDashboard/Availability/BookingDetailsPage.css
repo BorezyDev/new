@@ -299,7 +299,8 @@ label {
   }
 
   .print-button {
-    display: none; /* Hide the print button */
+    display: none; 
+    margin-right: 5px;/* Hide the print button */
   }
 }
 
@@ -328,6 +329,7 @@ label {
   .vaisak img,
   .print-button {
     display: none;
+    margin-right: "5px";
   }
 }
 

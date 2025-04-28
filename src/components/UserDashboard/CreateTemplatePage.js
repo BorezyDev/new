@@ -58,29 +58,32 @@ const CreateTemplate = () => {
 
   const handleCreateTemplate = async (e) => {
     e.preventDefault();
-
+  
     if (!templateName || !templateBody) {
       toast.warn("Both fields are required!");
       return;
     }
-
+  
     try {
-      await addDoc(collection(db, "templates"), {
+      // ⬇️ Save the template under the correct branch path
+      await addDoc(collection(db, `products/${branchCode}/templates`), {
         name: templateName,
         body: templateBody,
         createdAt: new Date(),
-        branchCode:branchCode,
+        branchCode: branchCode,
       });
+  
       toast.success("Template created successfully!");
       setTemplateName("");
       setTemplateBody("");
-
-      setTimeout(() =>navigate("/overview"),5000);
+  
+      setTimeout(() => navigate("/overview"), 1500); // Redirect after short delay
     } catch (error) {
       console.error("Error creating template:", error);
       toast.error("Failed to create template.");
     }
   };
+  
 
   // Function to insert a placeholder into the template body
   const insertPlaceholder = (placeholder) => {
