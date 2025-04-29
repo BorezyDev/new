@@ -212,6 +212,8 @@ const BookingDashboard = () => {
   }, [userData.branchCode]);
 
   const handleDelete = async (receiptNumber, productCode) => {
+     const confirmed = window.confirm("Are you sure you want to delete this booking?");
+  if (!confirmed) return;
     try {
       const branchCode = userData.branchCode;
 

@@ -83,10 +83,15 @@ const AddUser = () => {
         branchCode,
       };
   
-      // 🔥 Store in new path: products/{branchCode}/subusers/{userId}
+      // ✅ Save to branch-specific location
       const subuserRef = doc(db, `products/${branchCode}/subusers/${userId}`);
       await setDoc(subuserRef, newUser);
-      console.log('User added successfully.');
+  
+      // ✅ Save to global subusers location
+      const globalSubuserRef = doc(db, `subusers/${userId}`);
+      await setDoc(globalSubuserRef, newUser);
+  
+      console.log('User added successfully to both locations.');
   
       // 🔄 Update user count in branch document
       const branchRef = doc(db, 'branches', branchCode);
@@ -104,7 +109,7 @@ const AddUser = () => {
         console.error('Branch not found. Branch Code:', branchCode);
       }
   
-      // Reset form
+      // 🔄 Reset form
       setName('');
       setEmail('');
       setSalary('');
@@ -121,6 +126,7 @@ const AddUser = () => {
       toast.error('Failed to add user. Please check if the email ID is incorrect or already exists.');
     }
   };
+  
   
 
   const handleCancel = () => {
