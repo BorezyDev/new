@@ -65,6 +65,18 @@ const UserSidebar = ({ isOpen }) => {
             </Link>
           </li>
           )}
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/Deletedbooking' ? 'active' : ''}`}>
+            <Link to="/usersidebar/Deletedbooking" style={{ display: 'flex', alignItems: 'center' }}>
+              <FaGift style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Deleted Booking
+            </Link>
+          </li>
+
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/creditnote' ? 'active' : ''}`}>
+            <Link to="/usersidebar/creditnote" style={{ display: 'flex', alignItems: 'center' }}>
+              <FaGift style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Credit note
+            </Link>
+          </li>
+       
           <li className={`sidebar-link ${location.pathname==='/logout'}`}>
             < Link to="/logout" style={{ display: 'flex', alignItems: 'center' }}>
             <FaSignOutAlt style={{ fontSize: '15px', color: '#757575', marginRight: '20px' }} /> Logout

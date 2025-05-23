@@ -290,7 +290,12 @@ label {
 }
 @media print {
   .activity-log-container, /* Hide activity log */
-  .vaisak,                 /* Hide back icon */
+  .vaisak,
+  .button,
+  .edit-button,
+  .payment-info button,
+  .client-type-container button,
+  .main-content button,
   footer {                 /* Hide footer if present */
     display: none;
   }

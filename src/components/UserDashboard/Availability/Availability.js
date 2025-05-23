@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, setDoc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, setDoc, writeBatch, deleteDoc, addDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import UserHeader from '../../UserDashboard/UserHeader';
@@ -98,7 +98,7 @@ const BookingDashboard = () => {
             }
 
             // Ensure returnDate is updated correctly
-            if (['return', 'cancelled', 'successful'].includes(userDetails.stage) && returnDateObj.getTime() >= todayDateObj.getTime()) {
+            if (['return', 'cancelled', 'successful','postponed'].includes(userDetails.stage) && returnDateObj.getTime() >= todayDateObj.getTime()) {
               console.log(`Updating returnDate for booking ${docSnapshot.id} to today`);
 
               batch.update(doc(db, `products/${userData.branchCode}/products/${productDoc.id}/bookings/${docSnapshot.id}`), {
@@ -211,34 +211,63 @@ const BookingDashboard = () => {
     fetchAllBookingsWithUserDetails();
   }, [userData.branchCode]);
 
-  const handleDelete = async (receiptNumber, productCode) => {
-     const confirmed = window.confirm("Are you sure you want to delete this booking?");
-  if (!confirmed) return;
+ const handleDelete = async (receiptNumber) => {
+    const confirmed = window.confirm("Are you sure you want to delete this booking?");
+    if (!confirmed) return;
     try {
       const branchCode = userData.branchCode;
+      const productsRef = collection(db, `products/${branchCode}/products`);
+      const productsSnapshot = await getDocs(productsRef);
 
-      console.log("Deleting booking with:");
-      console.log("Branch Code:", branchCode);
-      console.log("Product Code:", productCode);
-      console.log("Receipt Number:", receiptNumber);
+      let deletionSuccessful = false;
+      const batch = writeBatch(db);
+      let deletedBookingData = null;
+      const productCodes = new Set(); // Use a Set to store unique product codes
 
-      // Reference to the bookings subcollection for the given product
-      const bookingsRef = collection(db, `products/${branchCode}/products/${productCode}/bookings`);
+      for (const productDoc of productsSnapshot.docs) {
+        const currentProductCode = productDoc.data().productCode;
+        const bookingsRef = collection(productDoc.ref, 'bookings');
+        const q = query(bookingsRef, where('receiptNumber', '==', receiptNumber));
+        const querySnapshot = await getDocs(q);
 
-      // Query to find booking with matching receiptNumber
-      const q = query(bookingsRef, where('receiptNumber', '==', receiptNumber));
-      const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const bookingDoc = querySnapshot.docs[0];
+          const bookingData = bookingDoc.data();
 
-      if (querySnapshot.empty) {
-        toast.error('No booking found with the specified receipt number.');
-        return;
+          // Store the data for the deletedBookings collection (if not already stored)
+          if (!deletedBookingData) {
+            deletedBookingData = { ...bookingData };
+          }
+          productCodes.add(currentProductCode); // Add the product code to the Set
+
+          // Add delete operation to the batch
+          batch.delete(bookingDoc.ref);
+          deletionSuccessful = true;
+          console.log(`Scheduled deletion of booking ${bookingDoc.id} under product ${currentProductCode}`);
+          // If you assume receiptNumber is unique across all product bookings, you can break here
+          // break;
+        }
       }
 
-      // Assuming receiptNumber is unique, delete the first match
-      const bookingDoc = querySnapshot.docs[0];
-      await deleteDoc(bookingDoc.ref);
+      if (deletionSuccessful) {
+        await batch.commit();
 
-      toast.success('Booking deleted successfully');
+        // Save deleted booking to products/{branchCode}/deletedBookings
+        const deletedRef = collection(db, `products/${branchCode}/deletedBookings`);
+        await addDoc(deletedRef, {
+          ...deletedBookingData,
+          productCodes: Array.from(productCodes), // Convert Set to Array before saving
+          deletedAt: new Date(),
+          deletedBy: userData?.email || "unknown",
+        });
+
+        toast.success('Booking deleted successfully');
+         window.location.reload();
+      } else {
+
+        toast.error('No booking found with the specified receipt number.');
+      }
+
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error('Error deleting booking');
@@ -464,6 +493,8 @@ const BookingDashboard = () => {
           // Update the booking stage in Firestore
           await updateDoc(bookingDocRef, { 'userDetails.stage': newStage });
           toast.success('Stage updated successfully');
+          window.location.reload();
+          window.location.reload();
         }
       }
 
@@ -771,15 +802,15 @@ const BookingDashboard = () => {
                           </button>
                           {userData?.role !== 'Subuser' && (
 
-                          <button
-                            onClick={(event) =>{
-                              event.stopPropagation();
-                             handleDelete(booking.receiptNumber, booking.products[0]?.productCode)}
-                            }
-                            className="delete-button"
-                          >
-                            <FaTrash />
-                          </button>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDelete(booking.receiptNumber)
+                              }}
+                              className="delete-button"
+                            >
+                              <FaTrash />
+                            </button>
                           )}
 
 

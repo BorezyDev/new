@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../firebaseConfig';
-import { collection, doc, addDoc, getDoc, query, getDocs, orderBy, writeBatch, where, setDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, getDoc, query, getDocs, orderBy, writeBatch, where, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL, listAll } from "firebase/storage";
 import { Await, useNavigate } from 'react-router-dom';
 import UserHeader from '../../UserDashboard/UserHeader';
@@ -25,8 +25,9 @@ function Booking() {
   const [isPaymentFormVisible, setIsPaymentFormVisible] = useState(false);
   const [subUsers, setSubUsers] = useState([]);
   const [selectedSubUser, setSelectedSubUser] = useState('');
-
-
+  const [availableCredit, setAvailableCredit] = useState(0);  // Add this line
+  const [appliedCredit, setAppliedCredit] = useState(0);
+  const [creditNoteId, setCreditNoteId] = useState(null);
   const [visibleForm, setVisibleForm] = useState(''); // Track visible form by its id
   const [userDetails, setUserDetails] = useState({
     name: '', email: '', contact: '', alternativecontactno: '', identityproof: '', identitynumber: '', source: '', customerby: '', receiptby: '', stage: 'Booking', alterations: '', grandTotalRent: '', grandTotalDeposit: '', discountOnRent: '',
@@ -70,9 +71,32 @@ function Booking() {
 
 
   // Number of days between pickup and return
-  const [products, setProducts] = useState([
-    { pickupDate: getFixedTime(new Date()), returnDate: '', productCode: '', quantity: '', availableQuantity: null, errorMessage: '', price: '', deposit: '', productName: '', },
-  ]);
+
+
+  const getInitialProducts = () => {
+  const pickupDate = new Date();
+  const pickupDateStr = getFixedTime(pickupDate); // today at 15:00
+
+  const returnDate = new Date(pickupDate);
+  returnDate.setDate(returnDate.getDate() + 2); // add 2 days
+  const returnDateStr = getFixedTime1(returnDate); // 2 days later at 14:00
+
+  return [
+    {
+      pickupDate: pickupDateStr,
+      returnDate: returnDateStr,
+      productCode: '',
+      quantity: '',
+      availableQuantity: null,
+      errorMessage: '',
+      price: '',
+      deposit: '',
+      productName: '',
+    },
+  ];
+};
+const [products, setProducts] = useState(getInitialProducts);
+
   const navigate = useNavigate();
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -239,59 +263,105 @@ function Booking() {
 
 
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserDetails((prevDetails) => ({
+      ...prevDetails,
+      [name]: value,
+    }));
+    if (name === 'contact') {
+      setAvailableCredit(0);
+      setAppliedCredit(0);
+      setCreditNoteId(null);
+      fetchCreditNote(value);
+    }
+  };
+  const fetchCreditNote = async (contactNumber) => {
+    if (userData?.branchCode && contactNumber) {
+      const creditNotesRef = collection(db, `products/${userData.branchCode}/creditNotes`);
+      const q = query(creditNotesRef, where('mobileNumber', '==', contactNumber), where('status', '==', 'active'));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const creditNoteData = querySnapshot.docs[0].data();
+        setAvailableCredit(creditNoteData.Balance);
+        setCreditNoteId(querySnapshot.docs[0].id);
+        toast.info(`Available credit: ₹${creditNoteData.Balance}`);
+      } else {
+        setAvailableCredit(0);
+        setCreditNoteId(null);
+      }
+    }
+  };
 
   const handleFirstProductDateChange = (e, field, index) => {
-    const newProducts = [...products];
-    let value = e.target.value;
+  const newProducts = [...products];
+  let value = e.target.value;
 
-    // Convert the selected date to Date object
-    const selectedDate = new Date(value);
-    const today = new Date();
+  // Convert selected date string to Date object
+  const selectedDate = new Date(value);
+  const today = new Date();
 
-    // Ensure pickupDate is not in the past
-    if (field === "pickupDate") {
-      if (selectedDate < today) {
-        toast.warn("Pickup date cannot be in the past.");
-        return;
-      }
-
-      // Ensure time is set to 3:00 PM
-      value = getFixedTime(selectedDate);
-
-      // Check if pickupDate is greater than returnDate
-      const returnDate = new Date(newProducts[index].returnDate);
-      if (returnDate && selectedDate > returnDate) {
-        toast.warn("Pickup date cannot be later than return date.");
-        return;
-      }
+  // Ensure pickupDate is not in the past
+  if (field === "pickupDate") {
+    if (selectedDate < today) {
+      toast.warn("Pickup date cannot be in the past.");
+      return;
     }
 
-    // Ensure returnDate is not earlier than pickupDate
-    if (field === "returnDate") {
-      const pickupDate = new Date(newProducts[index].pickupDate);
+    // Set time to 3:00 PM for pickupDate
+    value = getFixedTime(selectedDate);
 
-      if (selectedDate < pickupDate) {
-        toast.warn("Return date cannot be earlier than pickup date.");
-        return;
-      }
+    // Calculate pickupDate + 2 days for default returnDate
+    const defaultReturnDate = new Date(selectedDate);
+    defaultReturnDate.setDate(defaultReturnDate.getDate() + 2);
+    const defaultReturnDateStr = getFixedTime1(defaultReturnDate);
 
-      // Ensure time is set to 3:00 PM
-      value = getFixedTime1(selectedDate);
+    // If returnDate is empty or earlier than pickupDate + 2 days, set it automatically
+    const currentReturnDate = new Date(newProducts[index].returnDate);
+    if (
+      index === 0 &&
+      (!newProducts[index].returnDate || currentReturnDate < defaultReturnDate)
+    ) {
+      newProducts[index].returnDate = defaultReturnDateStr;
+      // Optionally, show a toast or info message here that returnDate auto-updated
     }
 
-    // Update the field value for the selected product
-    newProducts[index][field] = value;
+    // Also check if pickupDate is greater than existing returnDate
+    const returnDate = new Date(newProducts[index].returnDate);
+    if (returnDate && selectedDate > returnDate) {
+      toast.warn("Pickup date cannot be later than return date.");
+      return;
+    }
+  }
 
-    // If first product, update firstProductDates state
-    if (index === 0) {
-      setFirstProductDates({
-        ...firstProductDates,
-        [field]: value
-      });
+  // Ensure returnDate is not earlier than pickupDate
+  if (field === "returnDate") {
+    const pickupDate = new Date(newProducts[index].pickupDate);
+
+    if (selectedDate < pickupDate) {
+      toast.warn("Return date cannot be earlier than pickup date.");
+      return;
     }
 
-    setProducts(newProducts);
-  };
+    // Set time to 2:00 PM for returnDate
+    value = getFixedTime1(selectedDate);
+  }
+
+  // Update the field value
+  newProducts[index][field] = value;
+
+  // Update firstProductDates if first product
+  if (index === 0) {
+    setFirstProductDates({
+      ...firstProductDates,
+      [field]: value,
+    });
+  }
+
+  setProducts(newProducts);
+};
+
 
 
 
@@ -794,8 +864,33 @@ function Booking() {
           extraRent,
           totalCost: totalCost.totalPrice,
           createdAt, // Save creation timestamp
+          appliedCredit: appliedCredit,
         });
       }
+
+      // ... within your function
+      if (creditNoteId && appliedCredit > 0) {
+        const creditNoteRef = doc(db, `products/${userData.branchCode}/creditNotes`, creditNoteId);
+        const creditNoteSnap = await getDoc(creditNoteRef);
+        if (creditNoteSnap.exists()) {
+          const currentCredit = creditNoteSnap.data().Balance || 0;
+          const totalcredit = creditNoteSnap.data().amount || 0;
+          const remainingCredit = currentCredit - appliedCredit;
+          const creditUsed = totalcredit - remainingCredit;
+
+          await updateDoc(creditNoteRef, {
+            Balance: remainingCredit,
+            CreditUsed: creditUsed,
+            status: remainingCredit > 0 ? 'active' : 'used',
+            usedReceipts: arrayUnion(receiptNumber),
+          });
+
+          toast.success('Credit note updated.');
+        } else {
+          toast.error('Error updating credit note: Credit note not found.');
+        }
+      }
+
 
       // Set payment confirmation state and redirect
       setIsPaymentConfirmed(true);
@@ -814,6 +909,31 @@ function Booking() {
 
 
 
+
+  const handleApplyCredit = () => {
+    const finalRent = Number(userDetails.finalrent) || 0;
+
+    if (availableCredit > 0 && finalRent > 0) {
+      const creditToApply = Math.min(availableCredit, finalRent);
+      const updatedFinalRent = finalRent - creditToApply;
+      const totalAmount = updatedFinalRent + Number(userDetails.finaldeposite || 0);
+      const balance = totalAmount - Number(userDetails.amountpaid || 0);
+
+      setAppliedCredit(creditToApply);
+
+      setUserDetails((prev) => ({
+        ...prev,
+        finalrent: updatedFinalRent,
+        creditNoteAmountAppliedToRent: creditToApply,
+        totalamounttobepaid: totalAmount,
+        balance,
+      }));
+
+      toast.success(`Applied credit of ₹${creditToApply}`);
+    } else {
+      toast.info('No credit available to apply.');
+    }
+  };
 
 
 
@@ -890,7 +1010,8 @@ function Booking() {
 
   // Calculate final rent, deposit, and amount to be paid
   useEffect(() => {
-    const finalrent = userDetails.grandTotalRent - (userDetails.discountOnRent || 0);
+    
+    const finalrent = userDetails.grandTotalRent - (userDetails.discountOnRent || 0)- (appliedCredit || 0);
     const finaldeposite = userDetails.grandTotalDeposit - (userDetails.discountOnDeposit || 0);
     const totalamounttobepaid = finalrent + finaldeposite;
     const balance = totalamounttobepaid - (userDetails.amountpaid || 0);
@@ -903,6 +1024,10 @@ function Booking() {
       balance,
     }));
   }, [userDetails.grandTotalRent, userDetails.discountOnRent, userDetails.grandTotalDeposit, userDetails.discountOnDeposit, userDetails.amountpaid]);
+
+
+
+
 
   useEffect(() => {
     const fetchSubUsers = async () => {
@@ -926,7 +1051,9 @@ function Booking() {
     fetchSubUsers();
   }, [userData.branchCode]);
 
-
+  const calculateFinalPrice = () => {
+    return userDetails.finalrent - appliedCredit;
+  };
   // Handle the selection of a sub-user
 
 
@@ -1134,13 +1261,22 @@ function Booking() {
               <div className="date-row" style={{ width: '700px', display: 'flex', }}>
 
                 <div className="form-group1" style={{ flex: '0 0 45%', marginRight: '0px' }}>
-                  <label>Contact Number</label>
+                  <label htmlFor="contact">Contact Number:</label>
                   <input
                     type="text"
+                    id="contact"
+                    name="contact"
                     value={userDetails.contact}
-                    onChange={(e) => setUserDetails({ ...userDetails, contact: e.target.value })}
+                    onChange={handleInputChange}
                     required
                   />
+                  {availableCredit > 0 && (
+                    <div className="credit-info">
+                      Available Credit: ₹{availableCredit.toFixed(2)}{' '}
+
+                    </div>
+                  )}
+
                 </div>
                 <div className="form-group1" style={{ flex: '0 0 45%', marginRight: '0px' }}>
                   <label>Alternative Phone Number</label>
@@ -1375,7 +1511,9 @@ function Booking() {
                         onChange={(e) => setUserDetails({ ...userDetails, discountOnDeposit: e.target.value })}
                       />
                     </div>
+
                   </div>
+
 
                   <div className="payment-form row1" style={{ flex: '0 0 30%', marginLeft: "70px" }} >
                     <div className="payment-form-row">
@@ -1396,6 +1534,33 @@ function Booking() {
                       />
                     </div>
                   </div>
+                  <div className="payment-form row1" style={{ flex: '0 0 30%', marginLeft: "70px" }}>
+                    <div className="payment-form-row">
+                      <label>Available Credit</label>
+                      <input
+                        type="text"
+                        value={availableCredit > 0 ? `₹${availableCredit.toFixed(2)}` : '—'}
+                        readOnly
+                      />
+                    </div>
+                    <div className="payment-form-row">
+                      <label>Applied Credit</label>
+                      <input
+                        type="text"
+                        value={appliedCredit > 0 ? `₹${appliedCredit.toFixed(2)}` : '—'}
+                        readOnly
+                      />
+                    </div>
+                    
+                    <div className="payment-form-row">
+                      {appliedCredit === 0 && availableCredit > 0 && (
+                        <button onClick={handleApplyCredit} className="apply-credit-button">
+                          Apply Credit
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
 
                 {/* Display Total Amount to be Paid */}
@@ -1407,7 +1572,7 @@ function Booking() {
                     <input
                       type="text"
                       value={userDetails.totalamounttobepaid}
-                      readOnly
+
                     />
                   </div>
                   <div className="payment-form-row" style={{ flex: '0 0 30%', marginLeft: "70px" }}>
@@ -1415,7 +1580,8 @@ function Booking() {
                     <input
                       type="text"
                       value={userDetails.amountpaid}
-                      onChange={(e) => setUserDetails({ ...userDetails, amountpaid: e.target.value })}
+                       onChange={(e) => setUserDetails({ ...userDetails, amountpaid: e.target.value })}
+
                     />
                   </div>
 

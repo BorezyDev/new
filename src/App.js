@@ -50,7 +50,12 @@ import BookingDetailsPage from './components/UserDashboard/Availability/BookingD
 import Logout from './components/Auth/Logout';
 import EditTemplate from './components/Profile/edittemplate';
 import Landing from './components/Auth/landing';
-
+import DeletedHistoryPage from './components/UserDashboard/Availability/Deletehistory';
+import CreditNoteDashboard from './components/UserDashboard/Availability/Creditnote';
+import GenerateCreditNote from './components/UserDashboard/Availability/GenerateCreditNote';
+import EditCreditNote from './components/UserDashboard/Availability/EditCreditNote';
+import ResetPassword from './components/Auth/ResetPassword';
+import FirebaseAuthActionHandler from './components/Auth/FirebaseAuthActionHandler';
 const App = () => (
 
   <UserProvider>
@@ -61,6 +66,8 @@ const App = () => (
 
         {/* Public Route - Login Page */}
         <Route path="/Login" element={<Login />} />
+        <Route path="/__/auth/action" element={<FirebaseAuthActionHandler />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route path="/dashboard" element={
@@ -74,6 +81,7 @@ const App = () => (
             <ChangePassword />
           </PrivateRoute>
         } />
+
 
         <Route path="/Logout" element={
           <PrivateRoute>
@@ -258,7 +266,26 @@ const App = () => (
             <BookingDashboard />
           </PrivateRoute>
         } />
-
+        <Route path="/usersidebar/Deletedbooking" element={
+          <PrivateRoute>
+            <DeletedHistoryPage />
+          </PrivateRoute>
+        } />
+        <Route path="/usersidebar/creditnote" element={
+          <PrivateRoute>
+            <CreditNoteDashboard />
+          </PrivateRoute>
+        } />
+         <Route path="/add-credit-note" element={
+          <PrivateRoute>
+            <GenerateCreditNote />
+          </PrivateRoute>
+        } />
+        <Route path="/edit-credit-note/:id" element={
+          <PrivateRoute>
+            <EditCreditNote />
+          </PrivateRoute>
+        } />
 
 
         <Route path="/usersidebar/dashboard" element={

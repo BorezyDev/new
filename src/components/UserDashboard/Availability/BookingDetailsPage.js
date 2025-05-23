@@ -337,7 +337,7 @@ const BookingDetailsPage = () => {
     setSelectedContactNo(contactNo);
     setIsModalOpen(true);
   };
-  
+
 
   // Function to send WhatsApp message
   const sendWhatsAppMessage = (contactNo, message) => {
@@ -369,29 +369,29 @@ const BookingDetailsPage = () => {
   // Handle template click and send WhatsApp message
   const handleTemplateClick = (template) => {
     if (!bookings.length) return;
-  
+
     const booking = bookings[0];
     const contactNo = booking?.userDetails?.contact || '';
     const createdAt = booking?.createdAt;
     const pickupDate = booking?.pickupDate;
     const returnDate = booking?.returnDate;
-  
+
     const productsList = bookings.map((b) => ({
       productCode: b.product?.productCode || '',
       productName: b.product?.productName || '',
       quantity: b.quantity || '',
     }));
-  
+
     const productsString = productsList
       .map((p) => `${p.productCode} : ${p.quantity}`)
       .join(', ');
-  
+
     const productsString1 = productsList
       .map((p) => `${p.productName}`)
       .join(', ');
-  
+
     const templateBody = template.body;
-  
+
     const message = templateBody
       .replace('{clientName}', name || '')
       .replace('{clientEmail}', email || '')
@@ -423,11 +423,11 @@ const BookingDetailsPage = () => {
       .replace('{ContactNo}', contactNo || '')
       .replace('{IdentityProof}', identityProof || '')
       .replace('{IdentityNumber}', identityNumber || '');
-  
+
     sendWhatsAppMessage(contactNo, message);
     setIsModalOpen(false);
   };
-  
+
 
   // Handle contact number selection
 
@@ -468,17 +468,28 @@ const BookingDetailsPage = () => {
 
         {/* Main Content Section */}
         <div className="main-content">
-          <button onClick={() => window.print()} className="print-button">
-            Print
-          </button>
-          <button
-            onClick={(event) => {
-              event.stopPropagation(); // Prevent event bubbling
-              handleContactNumberClick(); // Your existing function
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',        // vertical alignment
+              justifyContent: 'center',    // horizontal centering
+              gap: '8px',                  // space between buttons
+              // optional: full height to center vertically in viewport
             }}
           >
-            <FaWhatsapp  />
-          </button>
+            <button onClick={() => window.print()} className="print-button">
+              Print
+            </button>
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                handleContactNumberClick(); 
+              }}
+            >
+              <FaWhatsapp />
+            </button>
+          </div>
+
 
           {/* Modal rendering */}
           {isModalOpen && (
@@ -557,10 +568,10 @@ const BookingDetailsPage = () => {
 
                 {userData?.role !== 'Subuser' && (
 
-                <button onClick={handleSavePersonalInfo} className="save-button">Save</button>
-              )}
-                  <button onClick={() => setIsEditingPersonalInfo(false)} >Cancel</button>
-                
+                  <button onClick={handleSavePersonalInfo} className="save-button">Save</button>
+                )}
+                <button onClick={() => setIsEditingPersonalInfo(false)} >Cancel</button>
+
 
               </>
             ) : (
@@ -586,8 +597,8 @@ const BookingDetailsPage = () => {
                 </div>
                 {userData?.role !== 'Subuser' && (
 
-                <button onClick={() => setIsEditingPersonalInfo(true)} className="edit-button">Edit</button>
-              )}
+                  <button onClick={() => setIsEditingPersonalInfo(true)} className="edit-button">Edit</button>
+                )}
 
               </>
             )}
@@ -694,6 +705,11 @@ const BookingDetailsPage = () => {
                 <div className="info-row">
                   <p><strong>Final Rent:</strong> ₹{userDetails.finalrent || 'N/A'}</p>
                   <p><strong>Grand Total Deposit:</strong> ₹{userDetails.grandTotalDeposit || 'N/A'}</p>
+
+                </div>
+                 <div className="info-row">
+                  <p><strong>Credit Amount:</strong> ₹{userDetails.creditNoteAmountAppliedToRent || 'N/A'}</p>
+
                 </div>
                 <div className="info-row">
                   <p><strong>Discount on Deposit:</strong> ₹{userDetails.discountOnDeposit || 'N/A'}</p>
@@ -713,8 +729,8 @@ const BookingDetailsPage = () => {
                 </div>
                 {userData?.role !== 'Subuser' && (
 
-                <button onClick={() => setIsEditingPayment(true)}>Edit</button>
-              )}
+                  <button onClick={() => setIsEditingPayment(true)}>Edit</button>
+                )}
 
               </>
             )}
